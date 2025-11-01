@@ -1,10 +1,15 @@
 import * as THREE from 'three';
+import { TerrainGenerator } from '../world/TerrainGenerator';
+import { ChunkManager } from '../world/ChunkManager';
 
 export class Engine {
   private scene: THREE.Scene;
   private camera: THREE.PerspectiveCamera;
   private renderer: THREE.WebGLRenderer;
   private clock: THREE.Clock;
+  private terrainGenerator: TerrainGenerator;
+  private chunkManager: ChunkManager;
+  private playerPosition: THREE.Vector3;
 
   constructor(canvas: HTMLCanvasElement) {
     this.scene = new THREE.Scene();
@@ -16,7 +21,7 @@ export class Engine {
       0.1,
       1000
     );
-    this.camera.position.set(0, 5, 10);
+    this.camera.position.set(0, 20, 30);
     this.camera.lookAt(0, 0, 0);
 
     this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
@@ -27,8 +32,13 @@ export class Engine {
 
     window.addEventListener('resize', () => this.onResize());
 
+    // Initialize terrain system
+    this.terrainGenerator = new TerrainGenerator();
+    this.chunkManager = new ChunkManager(this.terrainGenerator);
+    this.playerPosition = new THREE.Vector3(0, 0, 0);
+
     this.setupLighting();
-    this.addTestObjects();
+    // Remove test objects - using real terrain now
   }
 
   private setupLighting() {
@@ -38,20 +48,6 @@ export class Engine {
     const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
     directionalLight.position.set(5, 10, 5);
     this.scene.add(directionalLight);
-  }
-
-  private addTestObjects() {
-    const groundGeometry = new THREE.PlaneGeometry(100, 100);
-    const groundMaterial = new THREE.MeshStandardMaterial({ color: 0x3a9d23 });
-    const ground = new THREE.Mesh(groundGeometry, groundMaterial);
-    ground.rotation.x = -Math.PI / 2;
-    this.scene.add(ground);
-
-    const cubeGeometry = new THREE.BoxGeometry(2, 2, 2);
-    const cubeMaterial = new THREE.MeshStandardMaterial({ color: 0xff0000 });
-    const cube = new THREE.Mesh(cubeGeometry, cubeMaterial);
-    cube.position.y = 1;
-    this.scene.add(cube);
   }
 
   private onResize() {
@@ -72,7 +68,16 @@ export class Engine {
   };
 
   private update(deltaTime: number) {
-    // Game logic updates
+    // Update terrain chunks based on player position
+    this.chunkManager.update(this.playerPosition, this.scene);
+    
+    // Simple camera rotation for testing
+    const time = this.clock.getElapsedTime();
+    const radius = 50;
+    this.camera.position.x = Math.sin(time * 0.1) * radius;
+    this.camera.position.z = Math.cos(time * 0.1) * radius;
+    this.camera.position.y = 30;
+    this.camera.lookAt(0, 0, 0);
   }
 
   private render() {
