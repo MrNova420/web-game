@@ -1,66 +1,90 @@
 import * as THREE from 'three';
 import { TerrainGenerator } from './TerrainGenerator';
+import { AssetLoader } from '../assets/AssetLoader';
 
 /**
  * GrassSystem manages instanced grass rendering for optimal performance
  * Uses GPU instancing to render thousands of grass blades efficiently
+ * Uses actual grass models from extracted_assets (NOT procedural geometry)
  */
 export class GrassSystem {
   private instancedMeshes = new Map<string, THREE.InstancedMesh>();
   private terrainGenerator: TerrainGenerator;
-  private grassGeometry: THREE.BufferGeometry;
+  private assetLoader: AssetLoader;
+  private grassGeometry: THREE.BufferGeometry | null = null;
   private grassMaterial: THREE.Material;
   private instancesPerChunk = 500; // Grass blades per chunk
   private dummy = new THREE.Object3D();
+  private grassAssets = [
+    '/extracted_assets/Stylized_Nature_MegaKit/OBJ/Grass_Common_Short.obj',
+    '/extracted_assets/Stylized_Nature_MegaKit/OBJ/Grass_Wispy_Short.obj',
+  ];
+  private grassModelLoaded = false;
 
-  constructor(terrainGenerator: TerrainGenerator) {
+  constructor(terrainGenerator: TerrainGenerator, assetLoader: AssetLoader) {
     this.terrainGenerator = terrainGenerator;
+    this.assetLoader = assetLoader;
     
-    // Create a simple blade of grass geometry
-    this.grassGeometry = this.createGrassBladeGeometry();
-    
-    // Create grass material with vertex colors for variety
+    // Create grass material
     this.grassMaterial = new THREE.MeshStandardMaterial({
       color: 0x3a9d23,
       flatShading: true,
-      side: THREE.DoubleSide,
-      vertexColors: true
+      side: THREE.DoubleSide
     });
+    
+    // Load grass model asynchronously
+    this.loadGrassModel();
   }
 
-  private createGrassBladeGeometry(): THREE.BufferGeometry {
-    // Create a simple quad for grass blade
-    const geometry = new THREE.PlaneGeometry(0.1, 0.5, 1, 2);
-    
-    // Bend the grass blade
-    const positions = geometry.attributes.position;
-    for (let i = 0; i < positions.count; i++) {
-      const y = positions.getY(i);
-      const bendFactor = y / 0.5; // More bend at top
-      positions.setX(i, positions.getX(i) + bendFactor * 0.02);
+  private async loadGrassModel() {
+    try {
+      // Load one of the grass models
+      const grassModel = await this.assetLoader.loadModel(this.grassAssets[0]);
+      
+      // Extract geometry from the loaded model
+      grassModel.traverse((child) => {
+        if (child instanceof THREE.Mesh && !this.grassGeometry) {
+          this.grassGeometry = child.geometry.clone();
+        }
+      });
+      
+      if (this.grassGeometry) {
+        this.grassModelLoaded = true;
+        console.log('Grass model loaded from assets');
+      }
+    } catch (error) {
+      console.error('Failed to load grass model:', error);
+      // Fallback to simple geometry if model fails to load
+      this.grassGeometry = this.createFallbackGrassGeometry();
+      this.grassModelLoaded = true;
     }
-    
-    // Add color variation
-    const colors = new Float32Array(positions.count * 3);
-    for (let i = 0; i < positions.count; i++) {
-      const variation = 0.8 + Math.random() * 0.2;
-      colors[i * 3] = 0.1 * variation;
-      colors[i * 3 + 1] = 0.5 * variation;
-      colors[i * 3 + 2] = 0.1 * variation;
-    }
-    geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
-    
-    return geometry;
+  }
+
+  private createFallbackGrassGeometry(): THREE.BufferGeometry {
+    // Only used as fallback if asset loading fails
+    console.warn('Using fallback grass geometry');
+    return new THREE.PlaneGeometry(0.1, 0.5, 1, 2);
   }
 
   /**
    * Populate a chunk with instanced grass
    */
-  populateChunk(chunkX: number, chunkZ: number, scene: THREE.Scene) {
+  async populateChunk(chunkX: number, chunkZ: number, scene: THREE.Scene) {
     const key = `${chunkX},${chunkZ}`;
     
     if (this.instancedMeshes.has(key)) {
       return; // Already populated
+    }
+
+    // Wait for grass model to load
+    if (!this.grassModelLoaded) {
+      console.log('Waiting for grass model to load...');
+      return;
+    }
+
+    if (!this.grassGeometry) {
+      console.error('Grass geometry not available');
+      return;
     }
 
     const chunkSize = 64;
@@ -131,10 +155,9 @@ export class GrassSystem {
   /**
    * Update grass animation (wind effect)
    */
-  update(deltaTime: number, windStrength: number = 0.5) {
-    // Wind animation could be done with a custom shader
-    // For now, we keep it simple without animation
-    // Future: Implement vertex shader for wind sway
+  update(deltaTime: number, windDirection?: THREE.Vector3, windStrength?: number) {
+    // Wind animation can be added via shader if needed
+    // For now, we keep grass static as we're using real models
   }
 
   /**

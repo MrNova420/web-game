@@ -9,6 +9,8 @@ import { PlayerController } from './PlayerController';
 import { AssetLoader } from '../assets/AssetLoader';
 import { GrassSystem } from '../world/GrassSystem';
 import { WeatherSystem } from '../world/WeatherSystem';
+import { WindSystem } from '../world/WindSystem';
+import { PostProcessingManager } from './PostProcessingManager';
 
 export class Engine {
   private scene: THREE.Scene;
@@ -25,6 +27,8 @@ export class Engine {
   private assetLoader: AssetLoader;
   private grassSystem: GrassSystem;
   private weatherSystem: WeatherSystem;
+  private windSystem: WindSystem;
+  private postProcessing: PostProcessingManager;
   private playerPosition: THREE.Vector3;
   private directionalLight!: THREE.DirectionalLight;
   private ambientLight!: THREE.AmbientLight;
@@ -67,8 +71,8 @@ export class Engine {
     this.vegetationManager = new VegetationManager(this.assetLoader, this.terrainGenerator);
     this.chunkManager.setVegetationManager(this.vegetationManager);
 
-    // Initialize grass system
-    this.grassSystem = new GrassSystem(this.terrainGenerator);
+    // Initialize grass system with asset loader to use real grass models
+    this.grassSystem = new GrassSystem(this.terrainGenerator, this.assetLoader);
     this.chunkManager.setGrassSystem(this.grassSystem);
 
     // Initialize skybox
@@ -87,10 +91,16 @@ export class Engine {
     // Initialize player controller
     this.playerController = new PlayerController(this.camera, new THREE.Vector3(0, 20, 0));
 
+    // Initialize wind system
+    this.windSystem = new WindSystem();
+
     // Initialize weather system
     this.weatherSystem = new WeatherSystem(this.scene);
     // Start with clear weather
     this.weatherSystem.setWeather('clear');
+
+    // Initialize post-processing
+    this.postProcessing = new PostProcessingManager(this.renderer, this.scene, this.camera);
   }
 
   private setupLighting() {
@@ -106,6 +116,7 @@ export class Engine {
     this.camera.aspect = window.innerWidth / window.innerHeight;
     this.camera.updateProjectionMatrix();
     this.renderer.setSize(window.innerWidth, window.innerHeight);
+    this.postProcessing.setSize(window.innerWidth, window.innerHeight);
   }
 
   public start() {
@@ -141,12 +152,23 @@ export class Engine {
     // Update day/night cycle
     this.dayNightCycle.update(deltaTime);
     
+    // Update wind system
+    this.windSystem.update(deltaTime);
+    
+    // Update grass with wind
+    this.grassSystem.update(
+      deltaTime, 
+      this.windSystem.getWindDirection(), 
+      this.windSystem.getWindStrength()
+    );
+    
     // Update weather system
     this.weatherSystem.update(deltaTime, this.playerPosition);
   }
 
   private render() {
-    this.renderer.render(this.scene, this.camera);
+    // Use post-processing for enhanced visuals
+    this.postProcessing.render();
   }
 
   public getScene() {
