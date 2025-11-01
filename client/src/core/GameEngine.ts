@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { IntegrationManager } from '../systems/IntegrationManager';
-import { AssetLoader } from './AssetLoader';
+import { AssetLoader } from '../assets/AssetLoader';
 import { RealAssetTerrainGenerator } from '../world/RealAssetTerrainGenerator';
 import { ChunkManager } from '../world/ChunkManager';
 import { BiomeSystem } from '../world/BiomeSystem';
