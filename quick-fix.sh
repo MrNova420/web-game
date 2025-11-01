@@ -44,6 +44,16 @@ fi
 
 cd ..
 
+# Setup assets symlink if not exists
+if [ ! -L "client/public/extracted_assets" ]; then
+    echo -e "${BLUE}Setting up assets symlink...${NC}"
+    mkdir -p client/public
+    cd client/public
+    ln -sf ../../extracted_assets .
+    cd ../..
+    echo -e "${GREEN}✓ Assets symlink created${NC}"
+fi
+
 echo ""
 echo -e "${BLUE}Step 2: Building for Development${NC}"
 echo "=============================="

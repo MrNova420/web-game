@@ -50,6 +50,16 @@ fi
 echo -e "${GREEN}✓ Dependencies ready${NC}"
 echo ""
 
+# Setup assets symlink if not exists
+if [ ! -L "client/public/extracted_assets" ]; then
+    echo -e "${BLUE}Setting up assets symlink...${NC}"
+    mkdir -p client/public
+    cd client/public
+    ln -sf ../../extracted_assets .
+    cd ../..
+    echo -e "${GREEN}✓ Assets symlink created${NC}"
+fi
+
 # Launch based on mode
 if [ "$MODE" = "dev" ]; then
     echo -e "${BLUE}Starting in DEVELOPMENT mode...${NC}"
