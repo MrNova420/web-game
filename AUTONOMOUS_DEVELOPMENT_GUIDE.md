@@ -861,22 +861,45 @@ const networkConfig = {
 
 ## 🚨 CRITICAL RULES
 
-### MUST FOLLOW
-1. ✅ **ONLY use assets from extracted_assets folder**
-2. ✅ **NEVER create placeholder geometry or models**
-3. ✅ **Always update PROGRESS_TRACKER.md after tasks**
-4. ✅ **Test on multiple devices (mobile, tablet, desktop)**
-5. ✅ **Commit frequently with clear messages**
-6. ✅ **Follow code style in CONTRIBUTING.md**
-7. ✅ **Optimize for performance from day one**
-8. ✅ **Validate server-side, never trust client**
+### MUST FOLLOW - ASSET USAGE
+1. ✅ **ONLY use assets from extracted_assets folder - NO EXCEPTIONS**
+2. ✅ **NEVER create placeholder geometry or models - USE ACTUAL ASSETS ONLY**
+3. ✅ **Every visible object MUST use a model from extracted_assets**
+4. ✅ **Trees = Use Stylized_Nature_MegaKit tree OBJs**
+5. ✅ **Grass = Use Stylized_Nature_MegaKit grass OBJs**
+6. ✅ **Rocks = Use Stylized_Nature_MegaKit rock OBJs**
+7. ✅ **Buildings = Use Medieval_Village_MegaKit OBJs**
+8. ✅ **Characters = Use Universal_Base_Characters models**
+9. ✅ **NPCs = Use KayKit_Adventurers models**
+10. ✅ **Enemies = Use KayKit_Skeletons models**
+11. ✅ **Items/Props = Use Fantasy_Props_MegaKit models**
+12. ✅ **Dungeons = Use KayKit_Dungeon assets**
+13. ✅ **Skyboxes = Use Skyboxes folder textures**
+14. ✅ **Music = Use Fantasy_RPG_Music tracks**
+
+### ACCEPTABLE EXCEPTIONS (ONLY THESE)
+- Terrain heightmap base (invisible ground shape) = PlaneGeometry with noise
+- Water surface animation = PlaneGeometry with shader
+- Particle effects (rain, snow) = BufferGeometry particles
+- UI elements = 2D Canvas/HTML
+- Post-processing = Shader effects
+
+### MUST FOLLOW - DEVELOPMENT
+1. ✅ **Always update PROGRESS_TRACKER.md after tasks**
+2. ✅ **Test on multiple devices (mobile, tablet, desktop)**
+3. ✅ **Commit frequently with clear messages**
+4. ✅ **Follow code style in CONTRIBUTING.md**
+5. ✅ **Optimize for performance from day one**
+6. ✅ **Validate server-side, never trust client**
 
 ### MUST AVOID
-1. ❌ **Do NOT create new 3D models**
-2. ❌ **Do NOT skip progress tracking**
-3. ❌ **Do NOT start coding without plan**
-4. ❌ **Do NOT ignore performance metrics**
-5. ❌ **Do NOT commit without testing**
+1. ❌ **Do NOT create new 3D models with geometry primitives**
+2. ❌ **Do NOT use BoxGeometry, SphereGeometry, etc. for visible objects**
+3. ❌ **Do NOT skip progress tracking**
+4. ❌ **Do NOT start coding without plan**
+5. ❌ **Do NOT ignore performance metrics**
+6. ❌ **Do NOT commit without testing**
+7. ❌ **Do NOT create procedural 3D models when assets exist**
 
 ---
 

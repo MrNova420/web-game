@@ -1,26 +1,36 @@
 import * as THREE from 'three';
-import { TerrainGenerator } from '../world/TerrainGenerator';
+import { RealAssetTerrainGenerator } from '../world/RealAssetTerrainGenerator';
 import { ChunkManager } from '../world/ChunkManager';
 import { SkyboxManager } from '../world/SkyboxManager';
 import { VegetationManager } from '../world/VegetationManager';
-import { WaterSystem } from '../world/WaterSystem';
 import { DayNightCycle } from '../world/DayNightCycle';
 import { PlayerController } from './PlayerController';
 import { AssetLoader } from '../assets/AssetLoader';
+import { GrassSystem } from '../world/GrassSystem';
+import { WeatherSystem } from '../world/WeatherSystem';
+import { WindSystem } from '../world/WindSystem';
+import { PostProcessingManager } from './PostProcessingManager';
 
+/**
+ * Engine - Main game engine using ONLY real asset models
+ * NO procedural geometry for visible objects
+ */
 export class Engine {
   private scene: THREE.Scene;
   private camera: THREE.PerspectiveCamera;
   private renderer: THREE.WebGLRenderer;
   private clock: THREE.Clock;
-  private terrainGenerator: TerrainGenerator;
+  private terrainGenerator: RealAssetTerrainGenerator;
   private chunkManager: ChunkManager;
   private skyboxManager: SkyboxManager;
   private vegetationManager: VegetationManager;
-  private waterSystem: WaterSystem;
   private dayNightCycle: DayNightCycle;
   private playerController: PlayerController;
   private assetLoader: AssetLoader;
+  private grassSystem: GrassSystem;
+  private weatherSystem: WeatherSystem;
+  private windSystem: WindSystem;
+  private postProcessing: PostProcessingManager;
   private playerPosition: THREE.Vector3;
   private directionalLight!: THREE.DirectionalLight;
   private ambientLight!: THREE.AmbientLight;
@@ -47,25 +57,25 @@ export class Engine {
 
     window.addEventListener('resize', () => this.onResize());
 
-    // Initialize asset loader
+    // Initialize asset loader FIRST
     this.assetLoader = new AssetLoader();
 
-    // Initialize terrain system
-    this.terrainGenerator = new TerrainGenerator();
+    // Initialize REAL asset-based terrain system - uses actual tile models
+    this.terrainGenerator = new RealAssetTerrainGenerator(this.assetLoader);
     this.chunkManager = new ChunkManager(this.terrainGenerator);
     this.playerPosition = new THREE.Vector3(0, 0, 0);
 
-    // Initialize water system
-    this.waterSystem = new WaterSystem(this.scene);
-    this.chunkManager.setWaterSystem(this.waterSystem);
-
-    // Initialize vegetation manager
+    // Initialize vegetation manager - uses actual tree/bush/rock models
     this.vegetationManager = new VegetationManager(this.assetLoader, this.terrainGenerator);
     this.chunkManager.setVegetationManager(this.vegetationManager);
 
-    // Initialize skybox
+    // Initialize grass system - uses actual grass models
+    this.grassSystem = new GrassSystem(this.terrainGenerator, this.assetLoader);
+    this.chunkManager.setGrassSystem(this.grassSystem);
+
+    // Initialize skybox - uses actual skybox textures
     this.skyboxManager = new SkyboxManager(this.scene);
-    this.skyboxManager.loadSkybox('day'); // Load default day skybox
+    this.skyboxManager.loadSkybox('day');
 
     this.setupLighting();
 
@@ -78,6 +88,16 @@ export class Engine {
 
     // Initialize player controller
     this.playerController = new PlayerController(this.camera, new THREE.Vector3(0, 20, 0));
+
+    // Initialize wind system
+    this.windSystem = new WindSystem();
+
+    // Initialize weather system (uses particles - acceptable)
+    this.weatherSystem = new WeatherSystem(this.scene);
+    this.weatherSystem.setWeather('clear');
+
+    // Initialize post-processing (shaders - acceptable)
+    this.postProcessing = new PostProcessingManager(this.renderer, this.scene, this.camera);
   }
 
   private setupLighting() {
@@ -93,6 +113,7 @@ export class Engine {
     this.camera.aspect = window.innerWidth / window.innerHeight;
     this.camera.updateProjectionMatrix();
     this.renderer.setSize(window.innerWidth, window.innerHeight);
+    this.postProcessing.setSize(window.innerWidth, window.innerHeight);
   }
 
   public start() {
@@ -122,15 +143,26 @@ export class Engine {
     // Update terrain chunks based on player position
     this.chunkManager.update(this.playerPosition, this.scene);
     
-    // Update water animation
-    this.waterSystem.update(deltaTime);
-    
     // Update day/night cycle
     this.dayNightCycle.update(deltaTime);
+    
+    // Update wind system
+    this.windSystem.update(deltaTime);
+    
+    // Update grass with wind
+    this.grassSystem.update(
+      deltaTime, 
+      this.windSystem.getWindDirection(), 
+      this.windSystem.getWindStrength()
+    );
+    
+    // Update weather system
+    this.weatherSystem.update(deltaTime, this.playerPosition);
   }
 
   private render() {
-    this.renderer.render(this.scene, this.camera);
+    // Use post-processing for enhanced visuals
+    this.postProcessing.render();
   }
 
   public getScene() {
