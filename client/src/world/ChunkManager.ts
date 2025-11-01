@@ -1,30 +1,25 @@
 import * as THREE from 'three';
-import { TerrainGenerator } from './TerrainGenerator';
+import { RealAssetTerrainGenerator } from './RealAssetTerrainGenerator';
 import { VegetationManager } from './VegetationManager';
-import { WaterSystem } from './WaterSystem';
 import { GrassSystem } from './GrassSystem';
-import { LODTerrain } from './LODTerrain';
 
+/**
+ * ChunkManager - Manages terrain chunks using REAL asset models
+ * NO PlaneGeometry - uses actual tile models from extracted_assets
+ */
 export class ChunkManager {
-  private chunks = new Map<string, THREE.Mesh>();
+  private chunks = new Map<string, THREE.Group>();
   private renderDistance = 5;
-  private terrainGenerator: TerrainGenerator;
-  private lodTerrain: LODTerrain;
+  private terrainGenerator: RealAssetTerrainGenerator;
   private vegetationManager: VegetationManager | null = null;
-  private waterSystem: WaterSystem | null = null;
   private grassSystem: GrassSystem | null = null;
 
-  constructor(terrainGenerator: TerrainGenerator) {
+  constructor(terrainGenerator: RealAssetTerrainGenerator) {
     this.terrainGenerator = terrainGenerator;
-    this.lodTerrain = new LODTerrain(terrainGenerator);
   }
 
   setVegetationManager(vegetationManager: VegetationManager) {
     this.vegetationManager = vegetationManager;
-  }
-
-  setWaterSystem(waterSystem: WaterSystem) {
-    this.waterSystem = waterSystem;
   }
 
   setGrassSystem(grassSystem: GrassSystem) {
@@ -42,11 +37,9 @@ export class ChunkManager {
         const key = `${cx},${cz}`;
 
         if (!this.chunks.has(key)) {
-          // Use LOD system for terrain generation
-          const chunk = this.lodTerrain.generateChunk(cx, cz, chunkX, chunkZ);
-          chunk.position.set(cx * 64, 0, cz * 64);
-          scene.add(chunk);
-          this.chunks.set(key, chunk);
+          // Generate terrain using REAL tile models
+          const chunkGroup = await this.terrainGenerator.generateChunk(cx, cz, scene);
+          this.chunks.set(key, chunkGroup);
           
           // Populate vegetation for this chunk
           if (this.vegetationManager) {
@@ -55,18 +48,13 @@ export class ChunkManager {
 
           // Add grass for this chunk
           if (this.grassSystem) {
-            this.grassSystem.populateChunk(cx, cz, scene);
-          }
-
-          // Add water plane for this chunk
-          if (this.waterSystem) {
-            this.waterSystem.createWaterPlane(cx, cz, 64);
+            await this.grassSystem.populateChunk(cx, cz, scene);
           }
         }
       }
     }
 
-    for (const [key, chunk] of this.chunks.entries()) {
+    for (const [key, chunkGroup] of this.chunks.entries()) {
       const [cx, cz] = key.split(',').map(Number);
       const distance = Math.max(
         Math.abs(cx - chunkX),
@@ -74,9 +62,7 @@ export class ChunkManager {
       );
 
       if (distance > this.renderDistance + 1) {
-        scene.remove(chunk);
-        chunk.geometry.dispose();
-        (chunk.material as THREE.Material).dispose();
+        this.terrainGenerator.removeChunk(cx, cz, scene);
         this.chunks.delete(key);
         
         // Remove vegetation for this chunk
@@ -87,11 +73,6 @@ export class ChunkManager {
         // Remove grass for this chunk
         if (this.grassSystem) {
           this.grassSystem.removeChunkGrass(cx, cz, scene);
-        }
-
-        // Remove water plane for this chunk
-        if (this.waterSystem) {
-          this.waterSystem.removeWaterPlane(cx, cz);
         }
       }
     }
