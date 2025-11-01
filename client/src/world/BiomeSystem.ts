@@ -9,6 +9,7 @@ export interface BiomeConfig {
     bushes: number;
     rocks: number;
   };
+  grassDensity: number; // 0.0 to 1.0
   waterLevel: number;
 }
 
@@ -31,6 +32,7 @@ export class BiomeSystem {
         bushes: 15,
         rocks: 3
       },
+      grassDensity: 0.8,
       waterLevel: 0
     });
 
@@ -44,6 +46,7 @@ export class BiomeSystem {
         bushes: 2,
         rocks: 15
       },
+      grassDensity: 0.2,
       waterLevel: 0
     });
 
@@ -57,6 +60,7 @@ export class BiomeSystem {
         bushes: 8,
         rocks: 4
       },
+      grassDensity: 1.0, // Maximum grass in plains
       waterLevel: 0
     });
 
@@ -70,6 +74,7 @@ export class BiomeSystem {
         bushes: 1,
         rocks: 8
       },
+      grassDensity: 0.0, // No grass in desert
       waterLevel: 0
     });
 
@@ -83,6 +88,7 @@ export class BiomeSystem {
         bushes: 10,
         rocks: 2
       },
+      grassDensity: 0.6,
       waterLevel: -1 // Slightly below ground
     });
 
@@ -96,6 +102,7 @@ export class BiomeSystem {
         bushes: 2,
         rocks: 10
       },
+      grassDensity: 0.1, // Very sparse grass
       waterLevel: 0
     });
 
@@ -109,6 +116,7 @@ export class BiomeSystem {
         bushes: 8,
         rocks: 5
       },
+      grassDensity: 0.7,
       waterLevel: 0
     });
   }
@@ -130,6 +138,11 @@ export class BiomeSystem {
   getVegetationDensity(biomeName: string): { trees: number; bushes: number; rocks: number } {
     const biome = this.biomes.get(biomeName);
     return biome ? biome.vegetationDensity : { trees: 5, bushes: 8, rocks: 5 };
+  }
+
+  getGrassDensity(biomeName: string): number {
+    const biome = this.biomes.get(biomeName);
+    return biome ? biome.grassDensity : 0.5;
   }
 
   getAllBiomes(): string[] {

@@ -7,6 +7,8 @@ import { WaterSystem } from '../world/WaterSystem';
 import { DayNightCycle } from '../world/DayNightCycle';
 import { PlayerController } from './PlayerController';
 import { AssetLoader } from '../assets/AssetLoader';
+import { GrassSystem } from '../world/GrassSystem';
+import { WeatherSystem } from '../world/WeatherSystem';
 
 export class Engine {
   private scene: THREE.Scene;
@@ -21,6 +23,8 @@ export class Engine {
   private dayNightCycle: DayNightCycle;
   private playerController: PlayerController;
   private assetLoader: AssetLoader;
+  private grassSystem: GrassSystem;
+  private weatherSystem: WeatherSystem;
   private playerPosition: THREE.Vector3;
   private directionalLight!: THREE.DirectionalLight;
   private ambientLight!: THREE.AmbientLight;
@@ -63,6 +67,10 @@ export class Engine {
     this.vegetationManager = new VegetationManager(this.assetLoader, this.terrainGenerator);
     this.chunkManager.setVegetationManager(this.vegetationManager);
 
+    // Initialize grass system
+    this.grassSystem = new GrassSystem(this.terrainGenerator);
+    this.chunkManager.setGrassSystem(this.grassSystem);
+
     // Initialize skybox
     this.skyboxManager = new SkyboxManager(this.scene);
     this.skyboxManager.loadSkybox('day'); // Load default day skybox
@@ -78,6 +86,11 @@ export class Engine {
 
     // Initialize player controller
     this.playerController = new PlayerController(this.camera, new THREE.Vector3(0, 20, 0));
+
+    // Initialize weather system
+    this.weatherSystem = new WeatherSystem(this.scene);
+    // Start with clear weather
+    this.weatherSystem.setWeather('clear');
   }
 
   private setupLighting() {
@@ -127,6 +140,9 @@ export class Engine {
     
     // Update day/night cycle
     this.dayNightCycle.update(deltaTime);
+    
+    // Update weather system
+    this.weatherSystem.update(deltaTime, this.playerPosition);
   }
 
   private render() {
