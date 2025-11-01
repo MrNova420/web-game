@@ -23,11 +23,16 @@ Build a massive, immersive multiplayer 3D open-world survival fantasy web game f
 
 ## 📚 Documentation
 
-**Start here:**
-- **[QUICK_START.md](QUICK_START.md)** - Get up and running in minutes
-- **[DEVELOPMENT_ROADMAP.md](DEVELOPMENT_ROADMAP.md)** - Complete project roadmap (12 phases, 40 weeks)
-- **[PROGRESS_TRACKER.md](PROGRESS_TRACKER.md)** - Track development progress
+**🤖 FOR AUTONOMOUS DEVELOPMENT:**
+- **[AUTONOMOUS_DEVELOPMENT_GUIDE.md](AUTONOMOUS_DEVELOPMENT_GUIDE.md)** ⭐ **MASTER REFERENCE** - Single source of truth for fully automated development with complete code examples, progress tracking, and step-by-step instructions
+
+**Supporting Documentation:**
+- **[DEVELOPMENT_ROADMAP.md](DEVELOPMENT_ROADMAP.md)** - Complete project roadmap (12 phases, 40 weeks, 334 tasks)
+- **[PROGRESS_TRACKER.md](PROGRESS_TRACKER.md)** - Task tracking and progress metrics
 - **[TECHNICAL_GUIDE.md](TECHNICAL_GUIDE.md)** - Architecture and implementation details
+- **[QUICK_START.md](QUICK_START.md)** - Developer setup instructions
+- **[CONTRIBUTING.md](CONTRIBUTING.md)** - Code standards and best practices
+- **[PROJECT_OVERVIEW.md](PROJECT_OVERVIEW.md)** - High-level summary
 
 ---
 
@@ -44,10 +49,11 @@ Build a massive, immersive multiplayer 3D open-world survival fantasy web game f
 git clone https://github.com/MrNova420/web-game.git
 cd web-game
 
-# Read the Quick Start guide
-cat QUICK_START.md
+# For autonomous development, read the master guide
+cat AUTONOMOUS_DEVELOPMENT_GUIDE.md
 
-# Follow setup instructions in QUICK_START.md
+# Or follow the quick start guide for manual setup
+cat QUICK_START.md
 ```
 
 ---
