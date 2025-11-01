@@ -315,7 +315,7 @@ export class GameEngine {
     const ui = new UISystem();
     this.integrationManager.registerSystem('ui', ui, ['playerStats', 'inventory', 'quests']);
     
-    const audio = new AudioSystem();
+    const audio = new AudioSystem(this.camera);
     this.integrationManager.registerSystem('audio', audio, []);
     
     const particles = new ParticleSystem(this.scene);

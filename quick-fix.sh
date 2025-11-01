@@ -71,25 +71,25 @@ echo -e "${YELLOW}Press Ctrl+C to stop all servers${NC}"
 echo ""
 
 # Create a script to start both
-cat > /tmp/start-game.sh << 'EOFSCRIPT'
+cat > /tmp/start-game.sh << EOFSCRIPT
 #!/bin/bash
 
 # Start server
-cd /home/runner/work/web-game/web-game/server
+cd "$SCRIPT_DIR/server"
 echo "Starting server..."
 npm run dev > /tmp/server.log 2>&1 &
-SERVER_PID=$!
+SERVER_PID=\$!
 
 # Wait for server to start
 sleep 3
 
 # Start client
-cd /home/runner/work/web-game/web-game/client
+cd "$SCRIPT_DIR/client"
 echo "Starting client..."
 npm run dev
 
 # Cleanup on exit
-kill $SERVER_PID 2>/dev/null
+kill \$SERVER_PID 2>/dev/null
 EOFSCRIPT
 
 chmod +x /tmp/start-game.sh
