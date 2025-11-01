@@ -160,39 +160,48 @@ export class GameEngine {
     const biomeSystem = new BiomeSystem();
     this.integrationManager.registerSystem('biomes', biomeSystem, []);
     
-    // Chunks
-    const chunkManager = new ChunkManager(this.scene, terrainGen, this.camera);
+    // Chunks - pass only terrain generator
+    const chunkManager = new ChunkManager(terrainGen);
     this.integrationManager.registerSystem('chunks', chunkManager, ['terrain', 'biomes']);
     
-    // Vegetation
-    const vegetation = new VegetationManager(this.scene, this.assetLoader);
+    // Vegetation - pass asset loader
+    const vegetation = new VegetationManager(this.assetLoader);
     this.integrationManager.registerSystem('vegetation', vegetation, ['terrain']);
     
-    // Grass
-    const grass = new GrassSystem(this.scene, this.assetLoader);
+    // Grass - pass asset loader
+    const grass = new GrassSystem(this.assetLoader);
     this.integrationManager.registerSystem('grass', grass, ['terrain']);
     
     // Skybox
     const skybox = new SkyboxManager(this.scene);
     this.integrationManager.registerSystem('skybox', skybox, []);
     
-    // Day/Night Cycle
-    const dayNight = new DayNightCycle(this.scene);
+    // Create lights for day/night cycle
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+    directionalLight.position.set(50, 100, 50);
+    directionalLight.castShadow = true;
+    this.scene.add(directionalLight);
+    
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+    this.scene.add(ambientLight);
+    
+    // Day/Night Cycle - pass lights and skybox
+    const dayNight = new DayNightCycle(directionalLight, ambientLight, skybox);
     this.integrationManager.registerSystem('daynight', dayNight, ['skybox']);
     
     // Weather
-    const weather = new WeatherSystem(this.scene, this.camera);
+    const weather = new WeatherSystem(this.scene);
     this.integrationManager.registerSystem('weather', weather, []);
     
-    // Dungeons
-    const dungeon = new DungeonSystem(this.scene, this.assetLoader);
+    // Dungeons - pass asset loader
+    const dungeon = new DungeonSystem(this.assetLoader);
     this.integrationManager.registerSystem('dungeon', dungeon, ['terrain']);
   }
   
   private async initializeCharacterSystems(): Promise<void> {
     console.log('[GameEngine] Initializing Character Systems...');
     
-    const characters = new CharacterSystem(this.scene, this.assetLoader);
+    const characters = new CharacterSystem(this.assetLoader);
     this.integrationManager.registerSystem('characters', characters, []);
     
     const animations = new AnimationSystem();
@@ -205,36 +214,36 @@ export class GameEngine {
   private async initializeEntitySystems(): Promise<void> {
     console.log('[GameEngine] Initializing Entity Systems...');
     
-    const npcs = new NPCSystem(this.scene, this.assetLoader);
+    const npcs = new NPCSystem(this.assetLoader);
     this.integrationManager.registerSystem('npcs', npcs, ['characters']);
     
-    const enemies = new EnemySystem(this.scene, this.assetLoader, this.camera);
+    const enemies = new EnemySystem(this.assetLoader);
     this.integrationManager.registerSystem('enemies', enemies, ['characters']);
   }
   
   private async initializeGameplaySystems(): Promise<void> {
     console.log('[GameEngine] Initializing Gameplay Systems...');
     
-    const inventory = new InventorySystem(this.scene, this.assetLoader);
+    const inventory = new InventorySystem();
     this.integrationManager.registerSystem('inventory', inventory, []);
     
     const quests = new QuestSystem();
     this.integrationManager.registerSystem('quests', quests, []);
     
-    const crafting = new CraftingSystem(this.scene, this.assetLoader);
+    const crafting = new CraftingSystem(this.assetLoader);
     this.integrationManager.registerSystem('crafting', crafting, ['inventory']);
     
-    const building = new BuildingSystem(this.scene, this.assetLoader);
+    const building = new BuildingSystem(this.assetLoader);
     this.integrationManager.registerSystem('building', building, ['inventory']);
     
-    const resources = new ResourceSystem(this.scene, this.assetLoader);
+    const resources = new ResourceSystem(this.assetLoader);
     this.integrationManager.registerSystem('resources', resources, ['inventory']);
   }
   
   private async initializeCombatSystems(): Promise<void> {
     console.log('[GameEngine] Initializing Combat & Multiplayer Systems...');
     
-    const combat = new CombatSystem(this.scene);
+    const combat = new CombatSystem();
     this.integrationManager.registerSystem('combat', combat, ['playerStats', 'enemies']);
     
     const network = new NetworkSystem();
