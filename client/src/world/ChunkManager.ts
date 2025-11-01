@@ -1,16 +1,22 @@
 import * as THREE from 'three';
 import { TerrainGenerator } from './TerrainGenerator';
+import { VegetationManager } from './VegetationManager';
 
 export class ChunkManager {
   private chunks = new Map<string, THREE.Mesh>();
   private renderDistance = 5;
   private terrainGenerator: TerrainGenerator;
+  private vegetationManager: VegetationManager | null = null;
 
   constructor(terrainGenerator: TerrainGenerator) {
     this.terrainGenerator = terrainGenerator;
   }
 
-  update(playerPosition: THREE.Vector3, scene: THREE.Scene) {
+  setVegetationManager(vegetationManager: VegetationManager) {
+    this.vegetationManager = vegetationManager;
+  }
+
+  async update(playerPosition: THREE.Vector3, scene: THREE.Scene) {
     const chunkX = Math.floor(playerPosition.x / 64);
     const chunkZ = Math.floor(playerPosition.z / 64);
 
@@ -25,6 +31,11 @@ export class ChunkManager {
           chunk.position.set(cx * 64, 0, cz * 64);
           scene.add(chunk);
           this.chunks.set(key, chunk);
+          
+          // Populate vegetation for this chunk
+          if (this.vegetationManager) {
+            await this.vegetationManager.populateChunk(cx, cz, scene);
+          }
         }
       }
     }
@@ -41,6 +52,11 @@ export class ChunkManager {
         chunk.geometry.dispose();
         (chunk.material as THREE.Material).dispose();
         this.chunks.delete(key);
+        
+        // Remove vegetation for this chunk
+        if (this.vegetationManager) {
+          this.vegetationManager.removeChunkVegetation(cx, cz, scene);
+        }
       }
     }
   }

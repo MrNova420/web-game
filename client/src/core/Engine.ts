@@ -1,6 +1,9 @@
 import * as THREE from 'three';
 import { TerrainGenerator } from '../world/TerrainGenerator';
 import { ChunkManager } from '../world/ChunkManager';
+import { SkyboxManager } from '../world/SkyboxManager';
+import { VegetationManager } from '../world/VegetationManager';
+import { AssetLoader } from '../assets/AssetLoader';
 
 export class Engine {
   private scene: THREE.Scene;
@@ -9,10 +12,14 @@ export class Engine {
   private clock: THREE.Clock;
   private terrainGenerator: TerrainGenerator;
   private chunkManager: ChunkManager;
+  private skyboxManager: SkyboxManager;
+  private vegetationManager: VegetationManager;
+  private assetLoader: AssetLoader;
   private playerPosition: THREE.Vector3;
 
   constructor(canvas: HTMLCanvasElement) {
     this.scene = new THREE.Scene();
+    // Background will be replaced by skybox
     this.scene.background = new THREE.Color(0x87ceeb);
 
     this.camera = new THREE.PerspectiveCamera(
@@ -32,13 +39,23 @@ export class Engine {
 
     window.addEventListener('resize', () => this.onResize());
 
+    // Initialize asset loader
+    this.assetLoader = new AssetLoader();
+
     // Initialize terrain system
     this.terrainGenerator = new TerrainGenerator();
     this.chunkManager = new ChunkManager(this.terrainGenerator);
     this.playerPosition = new THREE.Vector3(0, 0, 0);
 
+    // Initialize vegetation manager
+    this.vegetationManager = new VegetationManager(this.assetLoader, this.terrainGenerator);
+    this.chunkManager.setVegetationManager(this.vegetationManager);
+
+    // Initialize skybox
+    this.skyboxManager = new SkyboxManager(this.scene);
+    this.skyboxManager.loadSkybox('day'); // Load default day skybox
+
     this.setupLighting();
-    // Remove test objects - using real terrain now
   }
 
   private setupLighting() {

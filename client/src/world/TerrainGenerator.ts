@@ -23,7 +23,7 @@ export class TerrainGenerator {
     for (let i = 0; i < vertices.length; i += 3) {
       const worldX = vertices[i] + chunkX * this.chunkSize;
       const worldZ = vertices[i + 1] + chunkZ * this.chunkSize;
-      const height = this.getHeight(worldX, worldZ);
+      const height = this.calculateHeight(worldX, worldZ);
       vertices[i + 2] = height;
     }
 
@@ -38,7 +38,7 @@ export class TerrainGenerator {
     return new THREE.Mesh(geometry, material);
   }
 
-  private getHeight(x: number, z: number): number {
+  private calculateHeight(x: number, z: number): number {
     let height = 0;
     let amplitude = this.heightScale;
     let frequency = 0.005;
@@ -50,6 +50,10 @@ export class TerrainGenerator {
     }
 
     return height;
+  }
+
+  public getHeight(x: number, z: number): number {
+    return this.calculateHeight(x, z);
   }
 
   getBiomeAt(x: number, z: number): string {

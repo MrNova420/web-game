@@ -3,7 +3,7 @@
 
 **Project Start Date**: 2025-11-01  
 **Current Phase**: Phase 1 - World Building & Foundation  
-**Overall Progress**: 4% (14/334 tasks completed)
+**Overall Progress**: 5% (18/334 tasks completed)
 
 ---
 
@@ -12,7 +12,7 @@
 | Phase | Status | Progress | Start Date | End Date | Notes |
 |-------|--------|----------|------------|----------|-------|
 | Phase 0: Planning | ✓ Complete | 100% | 2025-11-01 | 2025-11-01 | Roadmap created |
-| Phase 1: World Building | ⏳ In Progress | 25% | 2025-11-01 | TBD | Infrastructure complete |
+| Phase 1: World Building | ⏳ In Progress | 35% | 2025-11-01 | TBD | Skybox & vegetation added |
 | Phase 2: Character Systems | ⏸️ Not Started | 0% | TBD | TBD | - |
 | Phase 3: Combat Systems | ⏸️ Not Started | 0% | TBD | TBD | - |
 | Phase 4: Survival & Crafting | ⏸️ Not Started | 0% | TBD | TBD | - |
@@ -63,14 +63,14 @@
 - [x] Implement 3D rendering engine initialization
 - [x] Set up camera system
 - [x] Configure lighting system
-- [ ] Implement skybox system
+- [x] Implement skybox system
 - [ ] Set up post-processing effects
 - [ ] Optimize rendering pipeline
 
 **Status**: ⏳ In Progress  
-**Progress**: 3/6 tasks  
+**Progress**: 4/6 tasks  
 **Blockers**: None  
-**Notes**: Basic engine with test scene rendering successfully
+**Notes**: Skybox system integrated with 5 available skyboxes from assets
 
 ### 1.3 Terrain & World Generation System
 - [x] Design procedural terrain generation
@@ -101,18 +101,18 @@
 **Notes**: Each biome requires unique asset placement and atmosphere
 
 ### 1.5 Vegetation & Detail Population
-- [ ] Create vegetation placement algorithms
+- [x] Create vegetation placement algorithms
 - [ ] Implement instanced rendering for grass
-- [ ] Add tree placement
-- [ ] Place rocks and boulders
+- [x] Add tree placement
+- [x] Place rocks and boulders
 - [ ] Add ground scatter
 - [ ] Implement wind animation
 - [ ] Optimize draw calls
 
-**Status**: ⏸️ Not Started  
-**Progress**: 0/7 tasks  
-**Blockers**: Depends on 1.4  
-**Notes**: Performance critical - use instancing
+**Status**: ⏳ In Progress  
+**Progress**: 3/7 tasks  
+**Blockers**: None  
+**Notes**: Trees, bushes, rocks placed based on biome. Using actual assets from Stylized_Nature_MegaKit
 
 ### 1.6 Water System
 - [ ] Implement water plane rendering
@@ -140,7 +140,7 @@
 **Blockers**: Depends on 1.2  
 **Notes**: -
 
-**Phase 1 Overall Progress**: 14/51 tasks (27%)
+**Phase 1 Overall Progress**: 18/51 tasks (35%)
 
 ---
 
@@ -299,10 +299,10 @@
 ## Overall Statistics
 
 **Total Tasks Across All Phases**: 334  
-**Completed Tasks**: 14  
-**In Progress**: 37  
+**Completed Tasks**: 18  
+**In Progress**: 33  
 **Not Started**: 283  
-**Overall Project Progress**: 4%
+**Overall Project Progress**: 5%
 
 ---
 
@@ -351,6 +351,10 @@
 - ✓ Created ChunkManager for infinite world streaming
 - ✓ Integrated terrain system into Engine with automatic chunk loading/unloading
 - ✓ Added biome detection system (forest, desert, swamp, plains, tundra)
+- ✓ Implemented SkyboxManager with 5 skyboxes from assets
+- ✓ Created VegetationManager for biome-specific asset placement
+- ✓ Integrated vegetation (trees, bushes, rocks) using actual OBJ models from Stylized_Nature_MegaKit
+- ✓ Vegetation automatically loads/unloads with terrain chunks
 
 ---
 
@@ -367,13 +371,13 @@
 ## Development Velocity
 
 ### Weekly Task Completion
-- Week 1: 14 tasks (Infrastructure + terrain system)
+- Week 1: 18 tasks (Infrastructure + terrain + vegetation)
 - Week 2: TBD
 - Week 3: TBD
 
 ### Average Tasks Per Week
 - Target: 8-12 tasks
-- Actual: 14 tasks (Week 1)
+- Actual: 18 tasks (Week 1)
 
 ---
 
