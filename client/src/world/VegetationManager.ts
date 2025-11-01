@@ -49,38 +49,13 @@ export class VegetationManager {
     const centerZ = baseZ + chunkSize / 2;
     const biome = this.terrainGenerator.getBiomeAt(centerX, centerZ);
 
-    // Determine vegetation density based on biome
-    let treeDensity = 0;
-    let bushDensity = 0;
-    let rockDensity = 0;
-
-    switch (biome) {
-      case 'forest':
-        treeDensity = 8;
-        bushDensity = 12;
-        rockDensity = 3;
-        break;
-      case 'plains':
-        treeDensity = 2;
-        bushDensity = 8;
-        rockDensity = 4;
-        break;
-      case 'swamp':
-        treeDensity = 5;
-        bushDensity = 10;
-        rockDensity = 2;
-        break;
-      case 'desert':
-        treeDensity = 0;
-        bushDensity = 1;
-        rockDensity = 8;
-        break;
-      case 'tundra':
-        treeDensity = 1;
-        bushDensity = 2;
-        rockDensity = 10;
-        break;
-    }
+    // Get vegetation density from biome system
+    const biomeSystem = this.terrainGenerator.getBiomeSystem();
+    const density = biomeSystem.getVegetationDensity(biome);
+    
+    const treeDensity = density.trees;
+    const bushDensity = density.bushes;
+    const rockDensity = density.rocks;
 
     // Place trees
     for (let i = 0; i < treeDensity; i++) {
