@@ -38,10 +38,14 @@ import { EnvironmentEffects } from '../systems/EnvironmentEffects';
 import { DebugSystem } from '../systems/DebugSystem';
 import { LODManager } from '../systems/LODManager';
 import { DungeonSystem } from '../systems/DungeonSystem';
+import { PerformanceOptimizer } from '../utils/PerformanceOptimizer';
+
+// Type for progress callback
+type ProgressCallback = (progress: number, message: string) => void;
 
 /**
  * GameEngine - Main game engine coordinating all systems
- * Integrates all 33 game systems into a cohesive MMO experience
+ * Integrates all 39 game systems into a cohesive MMO experience with performance optimization
  */
 export class GameEngine {
   // THREE.js core
@@ -52,6 +56,7 @@ export class GameEngine {
   // Integration
   private integrationManager: IntegrationManager;
   private assetLoader: AssetLoader;
+  private perfOptimizer: PerformanceOptimizer;
   
   // Game loop
   private isRunning: boolean = false;
@@ -61,27 +66,42 @@ export class GameEngine {
   private frameId: number = 0;
   
   // Fixed timestep
-  private readonly TARGET_FPS = 60;
-  private readonly FRAME_TIME = 1000 / this.TARGET_FPS;
+  private TARGET_FPS: number = 60;
+  private FRAME_TIME: number = 1000 / this.TARGET_FPS;
   private accumulator: number = 0;
   
-  constructor() {
-    console.log('[GameEngine] Initializing Fantasy Survival MMO...');
+  constructor(perfOptimizer?: PerformanceOptimizer) {
+    console.log('[GameEngine] Initializing Optimized Fantasy Survival MMO...');
     
-    // Initialize THREE.js
+    // Get or create performance optimizer
+    this.perfOptimizer = perfOptimizer || PerformanceOptimizer.getInstance();
+    const settings = this.perfOptimizer.getSettings();
+    
+    // Adjust target FPS based on device
+    this.TARGET_FPS = settings.targetFPS;
+    this.FRAME_TIME = 1000 / this.TARGET_FPS;
+    
+    console.log(`[GameEngine] Performance tier: ${this.perfOptimizer.deviceTier}`);
+    console.log(`[GameEngine] Target FPS: ${this.TARGET_FPS}`);
+    
+    // Initialize THREE.js with performance settings
     this.scene = new THREE.Scene();
+    this.scene.fog = new THREE.Fog(0x87CEEB, 10, settings.viewDistance);
+    
     this.camera = new THREE.PerspectiveCamera(
       75,
       window.innerWidth / window.innerHeight,
       0.1,
-      1000
+      settings.viewDistance
     );
+    
     this.renderer = new THREE.WebGLRenderer({ 
-      antialias: true,
-      powerPreference: 'high-performance'
+      antialias: settings.antialiasing,
+      powerPreference: 'high-performance',
+      alpha: false
     });
     
-    this.setupRenderer();
+    this.setupRenderer(settings);
     
     // Initialize integration manager
     this.integrationManager = new IntegrationManager();
@@ -92,13 +112,26 @@ export class GameEngine {
     console.log('[GameEngine] Core initialization complete');
   }
   
-  private setupRenderer(): void {
+  private setupRenderer(settings: any): void {
     this.renderer.setSize(window.innerWidth, window.innerHeight);
-    this.renderer.setPixelRatio(window.devicePixelRatio);
-    this.renderer.shadowMap.enabled = true;
-    this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    
+    // Adjust pixel ratio based on device tier
+    const pixelRatio = settings.textureQuality === 'low' ? 1 : 
+                      settings.textureQuality === 'medium' ? Math.min(window.devicePixelRatio, 1.5) :
+                      Math.min(window.devicePixelRatio, 2);
+    this.renderer.setPixelRatio(pixelRatio);
+    
+    this.renderer.shadowMap.enabled = settings.shadows;
+    if (settings.shadows) {
+      this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    }
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
     
+    // Append to existing canvas or body
+    const existingCanvas = document.getElementById('game-canvas');
+    if (existingCanvas && existingCanvas !== this.renderer.domElement) {
+      existingCanvas.remove();
+    }
     document.body.appendChild(this.renderer.domElement);
     
     // Handle window resize
@@ -110,37 +143,57 @@ export class GameEngine {
   }
   
   /**
-   * Initialize all game systems
+   * Initialize all game systems with progress tracking
    */
-  public async initialize(): Promise<void> {
+  public async initialize(progressCallback?: ProgressCallback): Promise<void> {
     console.log('[GameEngine] Initializing all game systems...');
     
+    const updateProgress = (progress: number, message: string) => {
+      if (progressCallback) progressCallback(progress, message);
+    };
+    
     try {
-      // Phase 1: World & Environment Systems
+      // Phase 1: World & Environment Systems (0-20%)
+      updateProgress(0, 'Loading world systems...');
       await this.initializeWorldSystems();
+      updateProgress(20, 'World systems loaded');
       
-      // Phase 2: Character & Animation Systems
+      // Phase 2: Character & Animation Systems (20-35%)
+      updateProgress(20, 'Loading character systems...');
       await this.initializeCharacterSystems();
+      updateProgress(35, 'Character systems loaded');
       
-      // Phase 3: Entity Systems
+      // Phase 3: Entity Systems (35-50%)
+      updateProgress(35, 'Loading entity systems...');
       await this.initializeEntitySystems();
+      updateProgress(50, 'Entity systems loaded');
       
-      // Phase 4: Gameplay Systems
+      // Phase 4: Gameplay Systems (50-65%)
+      updateProgress(50, 'Loading gameplay systems...');
       await this.initializeGameplaySystems();
+      updateProgress(65, 'Gameplay systems loaded');
       
-      // Phase 5: Combat & Multiplayer
+      // Phase 5: Combat & Multiplayer (65-80%)
+      updateProgress(65, 'Loading combat systems...');
       await this.initializeCombatSystems();
+      updateProgress(80, 'Combat systems loaded');
       
-      // Phase 6: UI & Audio
+      // Phase 6: UI & Audio (80-90%)
+      updateProgress(80, 'Loading UI and audio...');
       await this.initializeUIAudioSystems();
+      updateProgress(90, 'UI and audio loaded');
       
-      // Phase 7: Optimization & Polish
+      // Phase 7: Optimization & Polish (90-100%)
+      updateProgress(90, 'Optimizing systems...');
       await this.initializeOptimizationSystems();
+      updateProgress(95, 'Systems optimized');
       
       // Initialize all systems through integration manager
+      updateProgress(95, 'Integrating systems...');
       await this.integrationManager.initializeAll();
+      updateProgress(100, 'All systems ready!');
       
-      console.log('[GameEngine] ✓ All 33 systems initialized successfully!');
+      console.log('[GameEngine] ✓ All 39 systems initialized successfully!');
       console.log('[GameEngine] Game is ready to start!');
       
     } catch (error) {
