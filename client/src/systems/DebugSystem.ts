@@ -275,11 +275,12 @@ export class DebugSystem {
     
     this.scene.traverse((obj) => {
       if (obj instanceof THREE.Mesh) {
-        if (Array.isArray(obj.material)) {
-          obj.material.forEach(mat => mat.wireframe = this.wireframeMode);
-        } else {
-          obj.material.wireframe = this.wireframeMode;
-        }
+        const materials = Array.isArray(obj.material) ? obj.material : [obj.material];
+        materials.forEach(mat => {
+          if (mat && 'wireframe' in mat) {
+            mat.wireframe = this.wireframeMode;
+          }
+        });
       }
     });
     

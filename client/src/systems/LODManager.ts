@@ -266,12 +266,11 @@ export class LODManager {
   /**
    * Set custom LOD distances
    */
-  public setLODDistances(high: number, medium: number, low: number, cull: number): void {
+  public setLODDistances(high: number, medium: number, low: number): void {
     this.LOD_LEVELS[0].distance = 0;
     this.LOD_LEVELS[1].distance = high;
     this.LOD_LEVELS[2].distance = medium;
     this.LOD_LEVELS[3].distance = low;
-    // Culled distance is implicit (anything beyond low)
   }
   
   /**
