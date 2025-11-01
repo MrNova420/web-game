@@ -1,101 +1,155 @@
+import './style.css';
 import { GameEngine } from './core/GameEngine';
+import { LoadingManager } from './utils/LoadingManager';
+import { PerformanceOptimizer } from './utils/PerformanceOptimizer';
 
 /**
  * Main Entry Point - Fantasy Survival MMO
- * Initializes and starts the complete game with all 33 systems
+ * Initializes and starts the complete game with all 39 systems
+ * With progressive loading and performance optimization
  */
 
 async function main() {
   console.log('=================================================');
-  console.log('   FANTASY SURVIVAL MMO - FULL GAME LAUNCH');
-  console.log('=================================================');
-  console.log('');
-  console.log('Systems: 33 Production-Ready Game Systems');
-  console.log('Assets: 824+ Real 3D Models & Textures');
-  console.log('Architecture: Complete MMO Foundation');
-  console.log('');
+  console.log('   FANTASY SURVIVAL MMO - OPTIMIZED LAUNCH');
   console.log('=================================================');
   
+  // Create loading manager
+  const loadingManager = new LoadingManager();
+  loadingManager.updateProgress(5, 'Detecting device capabilities...');
+  
+  // Initialize performance optimizer
+  const perfOptimizer = PerformanceOptimizer.getInstance();
+  console.log(`[Main] Device tier: ${perfOptimizer.deviceTier}`);
+  console.log(`[Main] Target FPS: ${perfOptimizer.settings.targetFPS}`);
+  loadingManager.updateProgress(10, 'Performance settings configured');
+  
   try {
-    // Create game engine
-    const engine = new GameEngine();
+    // Small delay to let loading screen render
+    await new Promise(resolve => setTimeout(resolve, 100));
     
-    // Initialize all 33 systems
-    console.log('\n[Main] Initializing game...');
-    await engine.initialize();
+    // Clear any existing canvas to prevent duplicates
+    const existingCanvas = document.getElementById('game-canvas');
+    if (existingCanvas) {
+      existingCanvas.remove();
+    }
+    
+    loadingManager.updateProgress(15, 'Creating game canvas...');
+    
+    // Create optimized canvas
+    const canvas = document.createElement('canvas');
+    canvas.id = 'game-canvas';
+    canvas.style.width = '100vw';
+    canvas.style.height = '100vh';
+    canvas.style.display = 'block';
+    canvas.style.position = 'fixed';
+    canvas.style.top = '0';
+    canvas.style.left = '0';
+    document.body.appendChild(canvas);
+    
+    loadingManager.updateProgress(20, 'Initializing game engine...');
+    
+    // Create game engine with performance settings
+    console.log('[Main] Creating optimized game engine...');
+    const engine = new GameEngine(perfOptimizer);
+    
+    loadingManager.updateProgress(30, 'Loading world systems...');
+    await new Promise(resolve => setTimeout(resolve, 50));
+    
+    // Initialize systems progressively
+    console.log('[Main] Initializing game systems...');
+    
+    // Phase 1: World (30-50%)
+    loadingManager.updateProgress(40, 'Generating terrain...');
+    
+    // Phase 2: Characters (50-65%)
+    loadingManager.updateProgress(55, 'Loading character systems...');
+    
+    // Phase 3: Gameplay (65-80%)
+    loadingManager.updateProgress(70, 'Initializing gameplay systems...');
+    
+    // Initialize all systems
+    await engine.initialize((progress: number, message: string) => {
+      // Progressive loading callback
+      const adjustedProgress = 30 + (progress * 0.6); // 30-90%
+      loadingManager.updateProgress(adjustedProgress, message);
+    });
+    
+    loadingManager.updateProgress(90, 'Starting game...');
+    await new Promise(resolve => setTimeout(resolve, 100));
     
     // Start game loop
-    console.log('\n[Main] Starting game...');
+    console.log('[Main] Starting optimized game loop...');
     engine.start();
+    
+    loadingManager.updateProgress(95, 'Preparing user interface...');
+    await new Promise(resolve => setTimeout(resolve, 100));
+    
+    // Complete loading
+    loadingManager.complete();
     
     console.log('\n=================================================');
     console.log('   ✓ GAME STARTED SUCCESSFULLY!');
     console.log('=================================================');
+    console.log(`\nPerformance: ${perfOptimizer.deviceTier.toUpperCase()} settings`);
+    console.log(`Target FPS: ${perfOptimizer.settings.targetFPS}`);
+    console.log(`Shadows: ${perfOptimizer.settings.shadows ? 'ON' : 'OFF'}`);
+    console.log(`View Distance: ${perfOptimizer.settings.viewDistance}m`);
     console.log('\nControls:');
     console.log('  WASD - Movement');
     console.log('  Mouse - Look around');
-    console.log('  E - Interact');
-    console.log('  I - Inventory');
-    console.log('  Q - Quest Log');
-    console.log('  C - Character Stats');
-    console.log('  M - Map');
-    console.log('  F1 - Debug Console');
+    console.log('  E - Interact | I - Inventory');
+    console.log('  Q - Quest Log | C - Character Stats');
+    console.log('  M - Map | F1 - Debug Console');
     console.log('\n=================================================');
     
-    // Expose engine to window for debugging
+    // Expose to window for debugging
     (window as any).gameEngine = engine;
+    (window as any).perfOptimizer = perfOptimizer;
     
-    // Handle page unload
+    // Handle cleanup
     window.addEventListener('beforeunload', () => {
       console.log('[Main] Shutting down game...');
       engine.stop();
     });
+    
+    // Monitor performance
+    let frameCount = 0;
+    let lastCheck = performance.now();
+    setInterval(() => {
+      const now = performance.now();
+      const elapsed = now - lastCheck;
+      const fps = (frameCount / elapsed) * 1000;
+      frameCount = 0;
+      lastCheck = now;
+      
+      // Adjust settings if performance drops
+      perfOptimizer.adjustSettings(fps);
+    }, 5000);
     
   } catch (error) {
     console.error('\n=================================================');
     console.error('   ✗ GAME INITIALIZATION FAILED');
     console.error('=================================================');
     console.error(error);
+    
+    // Show error through loading manager
+    loadingManager.showError(
+      error instanceof Error ? error.message : 'Unknown error occurred. Check console (F12) for details.'
+    );
+    
     throw error;
   }
 }
 
-// Start the game
-main().catch(error => {
-  console.error('Fatal error:', error);
-  document.body.innerHTML = `
-    <div style="
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      height: 100vh;
-      font-family: Arial, sans-serif;
-      background: #1a1a1a;
-      color: #ff4444;
-    ">
-      <div style="text-align: center;">
-        <h1>Game Initialization Failed</h1>
-        <p>Please check the console for details</p>
-        <pre style="
-          background: #000;
-          padding: 20px;
-          border-radius: 5px;
-          text-align: left;
-          max-width: 600px;
-          overflow: auto;
-        ">${error.message}</pre>
-      </div>
-    </div>
-  `;
-});;
-import { Engine } from './core/Engine';
-
-const canvas = document.getElementById('game-canvas') as HTMLCanvasElement;
-
-if (canvas) {
-  const engine = new Engine(canvas);
-  engine.start();
-  console.log('Game engine started!');
+// Start the game when DOM is ready
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', main);
 } else {
-  console.error('Canvas not found!');
+  // Delay slightly to ensure DOM is fully ready
+  setTimeout(() => {
+    main().catch(error => {
+      console.error('Fatal error during game startup:', error);
+    });
+  }, 50);
 }
