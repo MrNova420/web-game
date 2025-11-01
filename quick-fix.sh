@@ -71,14 +71,15 @@ echo -e "${YELLOW}Press Ctrl+C to stop all servers${NC}"
 echo ""
 
 # Create a script to start both
-cat > /tmp/start-game.sh << EOFSCRIPT
+# Note: We pass SCRIPT_DIR as environment variable to the script
+cat > /tmp/start-game.sh << 'EOFSCRIPT'
 #!/bin/bash
 
 # Start server
 cd "$SCRIPT_DIR/server"
 echo "Starting server..."
 npm run dev > /tmp/server.log 2>&1 &
-SERVER_PID=\$!
+SERVER_PID=$!
 
 # Wait for server to start
 sleep 3
@@ -89,10 +90,10 @@ echo "Starting client..."
 npm run dev
 
 # Cleanup on exit
-kill \$SERVER_PID 2>/dev/null
+kill $SERVER_PID 2>/dev/null
 EOFSCRIPT
 
 chmod +x /tmp/start-game.sh
 
-# Start the game
-bash /tmp/start-game.sh
+# Start the game with SCRIPT_DIR environment variable
+SCRIPT_DIR="$SCRIPT_DIR" bash /tmp/start-game.sh
