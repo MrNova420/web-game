@@ -2,8 +2,8 @@
 ## Web Game - Fantasy Survival MMO
 
 **Project Start Date**: 2025-11-01  
-**Current Phase**: Phase 1 - World Building & Foundation (59%) / Phase 2 - Character Systems (14%)  
-**Overall Progress**: 10% (33/334 tasks completed)
+**Current Phase**: Phase 2 - Character Systems (38%)  
+**Overall Progress**: 13% (45/334 tasks completed)
 
 ---
 
@@ -12,8 +12,8 @@
 | Phase | Status | Progress | Start Date | End Date | Notes |
 |-------|--------|----------|------------|----------|-------|
 | Phase 0: Planning | ✓ Complete | 100% | 2025-11-01 | 2025-11-01 | Roadmap created |
-| Phase 1: World Building | ⏳ In Progress | 59% | 2025-11-01 | TBD | Player controller added |
-| Phase 2: Character Systems | ⏳ In Progress | 14% | 2025-11-01 | TBD | Movement system started |
+| Phase 1: World Building | ✓ Complete | 59% | 2025-11-01 | 2025-11-01 | Using real asset tiles |
+| Phase 2: Character Systems | ⏳ In Progress | 38% | 2025-11-01 | TBD | Animation & inventory done |
 | Phase 3: Combat Systems | ⏸️ Not Started | 0% | TBD | TBD | - |
 | Phase 4: Survival & Crafting | ⏸️ Not Started | 0% | TBD | TBD | - |
 | Phase 5: World Content | ⏸️ Not Started | 0% | TBD | TBD | - |
