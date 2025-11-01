@@ -1,10 +1,10 @@
 import * as THREE from 'three';
 import { AssetLoader } from '../assets/AssetLoader';
-import { TerrainGenerator } from './TerrainGenerator';
+import { RealAssetTerrainGenerator } from './RealAssetTerrainGenerator';
 
 export class VegetationManager {
   private assetLoader: AssetLoader;
-  private terrainGenerator: TerrainGenerator;
+  private terrainGenerator: RealAssetTerrainGenerator;
   private placedVegetation = new Map<string, THREE.Object3D[]>();
   
   private vegetationAssets = {
@@ -26,7 +26,7 @@ export class VegetationManager {
     ]
   };
 
-  constructor(assetLoader: AssetLoader, terrainGenerator: TerrainGenerator) {
+  constructor(assetLoader: AssetLoader, terrainGenerator: RealAssetTerrainGenerator) {
     this.assetLoader = assetLoader;
     this.terrainGenerator = terrainGenerator;
   }

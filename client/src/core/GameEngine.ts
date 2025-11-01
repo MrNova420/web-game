@@ -283,7 +283,7 @@ export class GameEngine {
   private async initializeGameplaySystems(): Promise<void> {
     console.log('[GameEngine] Initializing Gameplay Systems...');
     
-    const inventory = new InventorySystem();
+    const inventory = new InventorySystem(this.assetLoader);
     this.integrationManager.registerSystem('inventory', inventory, []);
     
     const quests = new QuestSystem();

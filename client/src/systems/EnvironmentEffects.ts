@@ -177,9 +177,9 @@ export class EnvironmentEffects {
         break;
       case 'fog':
         this.windStrength = 0.1;
-        // Adjust fog density
-        if (this.scene.fog) {
-          (this.scene.fog as THREE.Fog).density = 0.02;
+        // Adjust fog density if using FogExp2
+        if (this.scene.fog && this.scene.fog instanceof THREE.FogExp2) {
+          this.scene.fog.density = 0.02;
         }
         break;
       default:
