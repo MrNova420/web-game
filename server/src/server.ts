@@ -1,5 +1,5 @@
 import express from 'express';
-import { Server } from 'socket.io';
+import { Server, Socket } from 'socket.io';
 import http from 'http';
 import cors from 'cors';
 
@@ -11,14 +11,14 @@ const io = new Server(server, {
   cors: { origin: '*' }
 });
 
-io.on('connection', (socket) => {
+io.on('connection', (socket: Socket) => {
   console.log('Player connected:', socket.id);
   
   socket.on('disconnect', () => {
     console.log('Player disconnected:', socket.id);
   });
   
-  socket.on('player:move', (data) => {
+  socket.on('player:move', (data: any) => {
     socket.broadcast.emit('player:update', {
       id: socket.id,
       ...data
