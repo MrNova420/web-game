@@ -164,12 +164,12 @@ export class GameEngine {
     const chunkManager = new ChunkManager(terrainGen);
     this.integrationManager.registerSystem('chunks', chunkManager, ['terrain', 'biomes']);
     
-    // Vegetation - pass asset loader
-    const vegetation = new VegetationManager(this.assetLoader);
+    // Vegetation - pass asset loader and terrain generator
+    const vegetation = new VegetationManager(this.assetLoader, terrainGen);
     this.integrationManager.registerSystem('vegetation', vegetation, ['terrain']);
     
-    // Grass - pass asset loader
-    const grass = new GrassSystem(this.assetLoader);
+    // Grass - pass terrain generator and asset loader
+    const grass = new GrassSystem(terrainGen, this.assetLoader);
     this.integrationManager.registerSystem('grass', grass, ['terrain']);
     
     // Skybox
