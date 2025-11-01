@@ -1,12 +1,14 @@
 import * as THREE from 'three';
 import { TerrainGenerator } from './TerrainGenerator';
 import { VegetationManager } from './VegetationManager';
+import { WaterSystem } from './WaterSystem';
 
 export class ChunkManager {
   private chunks = new Map<string, THREE.Mesh>();
   private renderDistance = 5;
   private terrainGenerator: TerrainGenerator;
   private vegetationManager: VegetationManager | null = null;
+  private waterSystem: WaterSystem | null = null;
 
   constructor(terrainGenerator: TerrainGenerator) {
     this.terrainGenerator = terrainGenerator;
@@ -14,6 +16,10 @@ export class ChunkManager {
 
   setVegetationManager(vegetationManager: VegetationManager) {
     this.vegetationManager = vegetationManager;
+  }
+
+  setWaterSystem(waterSystem: WaterSystem) {
+    this.waterSystem = waterSystem;
   }
 
   async update(playerPosition: THREE.Vector3, scene: THREE.Scene) {
@@ -36,6 +42,11 @@ export class ChunkManager {
           if (this.vegetationManager) {
             await this.vegetationManager.populateChunk(cx, cz, scene);
           }
+
+          // Add water plane for this chunk
+          if (this.waterSystem) {
+            this.waterSystem.createWaterPlane(cx, cz, 64);
+          }
         }
       }
     }
@@ -56,6 +67,11 @@ export class ChunkManager {
         // Remove vegetation for this chunk
         if (this.vegetationManager) {
           this.vegetationManager.removeChunkVegetation(cx, cz, scene);
+        }
+
+        // Remove water plane for this chunk
+        if (this.waterSystem) {
+          this.waterSystem.removeWaterPlane(cx, cz);
         }
       }
     }

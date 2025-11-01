@@ -3,6 +3,8 @@ import { TerrainGenerator } from '../world/TerrainGenerator';
 import { ChunkManager } from '../world/ChunkManager';
 import { SkyboxManager } from '../world/SkyboxManager';
 import { VegetationManager } from '../world/VegetationManager';
+import { WaterSystem } from '../world/WaterSystem';
+import { DayNightCycle } from '../world/DayNightCycle';
 import { AssetLoader } from '../assets/AssetLoader';
 
 export class Engine {
@@ -14,8 +16,12 @@ export class Engine {
   private chunkManager: ChunkManager;
   private skyboxManager: SkyboxManager;
   private vegetationManager: VegetationManager;
+  private waterSystem: WaterSystem;
+  private dayNightCycle: DayNightCycle;
   private assetLoader: AssetLoader;
   private playerPosition: THREE.Vector3;
+  private directionalLight!: THREE.DirectionalLight;
+  private ambientLight!: THREE.AmbientLight;
 
   constructor(canvas: HTMLCanvasElement) {
     this.scene = new THREE.Scene();
@@ -47,6 +53,10 @@ export class Engine {
     this.chunkManager = new ChunkManager(this.terrainGenerator);
     this.playerPosition = new THREE.Vector3(0, 0, 0);
 
+    // Initialize water system
+    this.waterSystem = new WaterSystem(this.scene);
+    this.chunkManager.setWaterSystem(this.waterSystem);
+
     // Initialize vegetation manager
     this.vegetationManager = new VegetationManager(this.assetLoader, this.terrainGenerator);
     this.chunkManager.setVegetationManager(this.vegetationManager);
@@ -56,15 +66,22 @@ export class Engine {
     this.skyboxManager.loadSkybox('day'); // Load default day skybox
 
     this.setupLighting();
+
+    // Initialize day/night cycle after lighting
+    this.dayNightCycle = new DayNightCycle(
+      this.directionalLight,
+      this.ambientLight,
+      this.skyboxManager
+    );
   }
 
   private setupLighting() {
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
-    this.scene.add(ambientLight);
+    this.ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+    this.scene.add(this.ambientLight);
 
-    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
-    directionalLight.position.set(5, 10, 5);
-    this.scene.add(directionalLight);
+    this.directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+    this.directionalLight.position.set(5, 10, 5);
+    this.scene.add(this.directionalLight);
   }
 
   private onResize() {
@@ -87,6 +104,12 @@ export class Engine {
   private update(deltaTime: number) {
     // Update terrain chunks based on player position
     this.chunkManager.update(this.playerPosition, this.scene);
+    
+    // Update water animation
+    this.waterSystem.update(deltaTime);
+    
+    // Update day/night cycle
+    this.dayNightCycle.update(deltaTime);
     
     // Simple camera rotation for testing
     const time = this.clock.getElapsedTime();
