@@ -5,6 +5,7 @@ import { SkyboxManager } from '../world/SkyboxManager';
 import { VegetationManager } from '../world/VegetationManager';
 import { WaterSystem } from '../world/WaterSystem';
 import { DayNightCycle } from '../world/DayNightCycle';
+import { PlayerController } from './PlayerController';
 import { AssetLoader } from '../assets/AssetLoader';
 
 export class Engine {
@@ -18,6 +19,7 @@ export class Engine {
   private vegetationManager: VegetationManager;
   private waterSystem: WaterSystem;
   private dayNightCycle: DayNightCycle;
+  private playerController: PlayerController;
   private assetLoader: AssetLoader;
   private playerPosition: THREE.Vector3;
   private directionalLight!: THREE.DirectionalLight;
@@ -73,6 +75,9 @@ export class Engine {
       this.ambientLight,
       this.skyboxManager
     );
+
+    // Initialize player controller
+    this.playerController = new PlayerController(this.camera, new THREE.Vector3(0, 20, 0));
   }
 
   private setupLighting() {
@@ -102,6 +107,18 @@ export class Engine {
   };
 
   private update(deltaTime: number) {
+    // Get terrain height at player position
+    const terrainHeight = this.terrainGenerator.getHeight(
+      this.playerController.getPosition().x,
+      this.playerController.getPosition().z
+    );
+
+    // Update player controller
+    this.playerController.update(deltaTime, terrainHeight);
+    
+    // Update player position from controller
+    this.playerPosition = this.playerController.getPosition();
+
     // Update terrain chunks based on player position
     this.chunkManager.update(this.playerPosition, this.scene);
     
@@ -110,14 +127,6 @@ export class Engine {
     
     // Update day/night cycle
     this.dayNightCycle.update(deltaTime);
-    
-    // Simple camera rotation for testing
-    const time = this.clock.getElapsedTime();
-    const radius = 50;
-    this.camera.position.x = Math.sin(time * 0.1) * radius;
-    this.camera.position.z = Math.cos(time * 0.1) * radius;
-    this.camera.position.y = 30;
-    this.camera.lookAt(0, 0, 0);
   }
 
   private render() {
