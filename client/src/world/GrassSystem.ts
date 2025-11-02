@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { TerrainGenerator } from './TerrainGenerator';
+import { RealAssetTerrainGenerator } from './RealAssetTerrainGenerator';
 import { AssetLoader } from '../assets/AssetLoader';
 
 /**
@@ -9,7 +9,7 @@ import { AssetLoader } from '../assets/AssetLoader';
  */
 export class GrassSystem {
   private instancedMeshes = new Map<string, THREE.InstancedMesh>();
-  private terrainGenerator: TerrainGenerator;
+  private terrainGenerator: RealAssetTerrainGenerator;
   private assetLoader: AssetLoader;
   private grassGeometry: THREE.BufferGeometry | null = null;
   private grassMaterial: THREE.Material;
@@ -21,7 +21,7 @@ export class GrassSystem {
   ];
   private grassModelLoaded = false;
 
-  constructor(terrainGenerator: TerrainGenerator, assetLoader: AssetLoader) {
+  constructor(terrainGenerator: RealAssetTerrainGenerator, assetLoader: AssetLoader) {
     this.terrainGenerator = terrainGenerator;
     this.assetLoader = assetLoader;
     
@@ -164,7 +164,9 @@ export class GrassSystem {
    * Cleanup resources
    */
   dispose() {
-    this.grassGeometry.dispose();
+    if (this.grassGeometry) {
+      this.grassGeometry.dispose();
+    }
     if (this.grassMaterial) {
       this.grassMaterial.dispose();
     }

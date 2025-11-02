@@ -7,7 +7,9 @@ echo "  GAME QUICK FIX & LAUNCH"
 echo "=========================================="
 echo ""
 
-cd /home/runner/work/web-game/web-game
+# Get the directory where the script is located
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+cd "$SCRIPT_DIR"
 
 # Colors
 GREEN='\033[0;32m'
@@ -42,6 +44,16 @@ fi
 
 cd ..
 
+# Setup assets symlink if not exists
+if [ ! -L "client/public/extracted_assets" ]; then
+    echo -e "${BLUE}Setting up assets symlink...${NC}"
+    mkdir -p client/public
+    cd client/public
+    ln -sf ../../extracted_assets .
+    cd ../..
+    echo -e "${GREEN}✓ Assets symlink created${NC}"
+fi
+
 echo ""
 echo -e "${BLUE}Step 2: Building for Development${NC}"
 echo "=============================="
@@ -69,11 +81,12 @@ echo -e "${YELLOW}Press Ctrl+C to stop all servers${NC}"
 echo ""
 
 # Create a script to start both
+# Note: We pass SCRIPT_DIR as environment variable to the script
 cat > /tmp/start-game.sh << 'EOFSCRIPT'
 #!/bin/bash
 
 # Start server
-cd /home/runner/work/web-game/web-game/server
+cd "$SCRIPT_DIR/server"
 echo "Starting server..."
 npm run dev > /tmp/server.log 2>&1 &
 SERVER_PID=$!
@@ -82,7 +95,7 @@ SERVER_PID=$!
 sleep 3
 
 # Start client
-cd /home/runner/work/web-game/web-game/client
+cd "$SCRIPT_DIR/client"
 echo "Starting client..."
 npm run dev
 
@@ -92,5 +105,5 @@ EOFSCRIPT
 
 chmod +x /tmp/start-game.sh
 
-# Start the game
-bash /tmp/start-game.sh
+# Start the game with SCRIPT_DIR environment variable
+SCRIPT_DIR="$SCRIPT_DIR" bash /tmp/start-game.sh

@@ -13,9 +13,19 @@ export class ChunkManager {
   private terrainGenerator: RealAssetTerrainGenerator;
   private vegetationManager: VegetationManager | null = null;
   private grassSystem: GrassSystem | null = null;
+  private scene: THREE.Scene | null = null;
+  private playerPosition: THREE.Vector3 = new THREE.Vector3(0, 0, 0);
 
   constructor(terrainGenerator: RealAssetTerrainGenerator) {
     this.terrainGenerator = terrainGenerator;
+  }
+
+  setScene(scene: THREE.Scene) {
+    this.scene = scene;
+  }
+
+  setPlayerPosition(position: THREE.Vector3) {
+    this.playerPosition.copy(position);
   }
 
   setVegetationManager(vegetationManager: VegetationManager) {
@@ -26,7 +36,14 @@ export class ChunkManager {
     this.grassSystem = grassSystem;
   }
 
-  async update(playerPosition: THREE.Vector3, scene: THREE.Scene) {
+  // Standard update method for IntegrationManager
+  update(deltaTime: number) {
+    if (this.scene) {
+      this.updateChunks(this.playerPosition, this.scene);
+    }
+  }
+
+  async updateChunks(playerPosition: THREE.Vector3, scene: THREE.Scene) {
     const chunkX = Math.floor(playerPosition.x / 64);
     const chunkZ = Math.floor(playerPosition.z / 64);
 

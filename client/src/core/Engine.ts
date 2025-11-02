@@ -63,6 +63,7 @@ export class Engine {
     // Initialize REAL asset-based terrain system - uses actual tile models
     this.terrainGenerator = new RealAssetTerrainGenerator(this.assetLoader);
     this.chunkManager = new ChunkManager(this.terrainGenerator);
+    this.chunkManager.setScene(this.scene); // Set scene reference
     this.playerPosition = new THREE.Vector3(0, 0, 0);
 
     // Initialize vegetation manager - uses actual tree/bush/rock models
@@ -140,8 +141,11 @@ export class Engine {
     // Update player position from controller
     this.playerPosition = this.playerController.getPosition();
 
+    // Update player position in chunk manager
+    this.chunkManager.setPlayerPosition(this.playerPosition);
+    
     // Update terrain chunks based on player position
-    this.chunkManager.update(this.playerPosition, this.scene);
+    this.chunkManager.update(deltaTime);
     
     // Update day/night cycle
     this.dayNightCycle.update(deltaTime);

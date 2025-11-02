@@ -10,7 +10,9 @@ echo "  FANTASY SURVIVAL MMO - LAUNCHER"
 echo "=========================================="
 echo ""
 
-cd /home/runner/work/web-game/web-game
+# Get the directory where the script is located
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+cd "$SCRIPT_DIR"
 
 # Colors
 GREEN='\033[0;32m'
@@ -47,6 +49,16 @@ fi
 
 echo -e "${GREEN}✓ Dependencies ready${NC}"
 echo ""
+
+# Setup assets symlink if not exists
+if [ ! -L "client/public/extracted_assets" ]; then
+    echo -e "${BLUE}Setting up assets symlink...${NC}"
+    mkdir -p client/public
+    cd client/public
+    ln -sf ../../extracted_assets .
+    cd ../..
+    echo -e "${GREEN}✓ Assets symlink created${NC}"
+fi
 
 # Launch based on mode
 if [ "$MODE" = "dev" ]; then

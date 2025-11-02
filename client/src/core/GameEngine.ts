@@ -94,6 +94,7 @@ export class GameEngine {
       0.1,
       settings.viewDistance
     );
+    this.camera.position.set(0, 20, 30); // Set initial camera position
     
     this.renderer = new THREE.WebGLRenderer({ 
       antialias: settings.antialiasing,
@@ -213,8 +214,9 @@ export class GameEngine {
     const biomeSystem = new BiomeSystem();
     this.integrationManager.registerSystem('biomes', biomeSystem, []);
     
-    // Chunks - pass only terrain generator
+    // Chunks - pass only terrain generator, then set scene
     const chunkManager = new ChunkManager(terrainGen);
+    chunkManager.setScene(this.scene);
     this.integrationManager.registerSystem('chunks', chunkManager, ['terrain', 'biomes']);
     
     // Vegetation - pass asset loader and terrain generator
@@ -224,6 +226,10 @@ export class GameEngine {
     // Grass - pass terrain generator and asset loader
     const grass = new GrassSystem(terrainGen, this.assetLoader);
     this.integrationManager.registerSystem('grass', grass, ['terrain']);
+    
+    // Link vegetation and grass to chunk manager
+    chunkManager.setVegetationManager(vegetation);
+    chunkManager.setGrassSystem(grass);
     
     // Skybox
     const skybox = new SkyboxManager(this.scene);
@@ -277,7 +283,7 @@ export class GameEngine {
   private async initializeGameplaySystems(): Promise<void> {
     console.log('[GameEngine] Initializing Gameplay Systems...');
     
-    const inventory = new InventorySystem();
+    const inventory = new InventorySystem(this.assetLoader);
     this.integrationManager.registerSystem('inventory', inventory, []);
     
     const quests = new QuestSystem();
@@ -309,7 +315,7 @@ export class GameEngine {
     const ui = new UISystem();
     this.integrationManager.registerSystem('ui', ui, ['playerStats', 'inventory', 'quests']);
     
-    const audio = new AudioSystem();
+    const audio = new AudioSystem(this.camera);
     this.integrationManager.registerSystem('audio', audio, []);
     
     const particles = new ParticleSystem(this.scene);
@@ -404,6 +410,12 @@ export class GameEngine {
    * Update all systems
    */
   private update(deltaTime: number): void {
+    // Update player position in chunk manager
+    const chunkManager = this.integrationManager.getSystem<ChunkManager>('chunks');
+    if (chunkManager) {
+      chunkManager.setPlayerPosition(this.camera.position);
+    }
+    
     // Update all systems through integration manager
     this.integrationManager.updateAll(deltaTime);
   }
