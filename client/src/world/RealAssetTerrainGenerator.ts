@@ -176,11 +176,15 @@ export class RealAssetTerrainGenerator {
             const instancedMesh = new THREE.InstancedMesh(geometry, material, maxInstances);
             instancedMesh.castShadow = true;
             instancedMesh.receiveShadow = true;
-            instancedMesh.count = 0;
+            instancedMesh.count = 0;  // Start at 0, will be incremented as tiles are placed
+            instancedMesh.visible = true;  // Explicitly set visible
+            instancedMesh.frustumCulled = false;  // Disable frustum culling temporarily for debugging
             
             scene.add(instancedMesh);
             this.instancedMeshes.set(tilePath, instancedMesh);
             this.instanceCounts.set(tilePath, 0);
+            
+            console.log(`[TerrainGenerator] Created instanced mesh for ${tilePath.split('/').pop()} - added to scene`);
           } else {
             // CPU MODE: Cache the model for cloning
             const cachedMesh = new THREE.Mesh(geometry, material);
@@ -278,7 +282,19 @@ export class RealAssetTerrainGenerator {
     }
     
     this.chunks.set(key, chunkGroup);
-    console.log(`Generated ${this.useGPUInstancing ? 'INSTANCED' : 'CPU'} terrain chunk ${key} with ${tilesPerSide * tilesPerSide} tiles for ${biome} biome`);
+    
+    // Log instancing status for debugging
+    if (this.useGPUInstancing) {
+      console.log(`Generated INSTANCED terrain chunk ${key} with ${tilesPerSide * tilesPerSide} tiles for ${biome} biome`);
+      // Log current instance counts
+      for (const [tilePath, count] of this.instanceCounts.entries()) {
+        if (count > 0) {
+          console.log(`  ${tilePath.split('/').pop()}: ${count} instances`);
+        }
+      }
+    } else {
+      console.log(`Generated CPU terrain chunk ${key} with ${tilesPerSide * tilesPerSide} tiles for ${biome} biome`);
+    }
     
     return chunkGroup;
   }
