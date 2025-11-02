@@ -39,6 +39,7 @@ import { DebugSystem } from '../systems/DebugSystem';
 import { LODManager } from '../systems/LODManager';
 import { DungeonSystem } from '../systems/DungeonSystem';
 import { PerformanceOptimizer } from '../utils/PerformanceOptimizer';
+import { PlayerController } from './PlayerController';
 
 // Type for progress callback
 type ProgressCallback = (progress: number, message: string) => void;
@@ -57,6 +58,9 @@ export class GameEngine {
   private integrationManager: IntegrationManager;
   private assetLoader: AssetLoader;
   private perfOptimizer: PerformanceOptimizer;
+  
+  // Player control
+  private playerController: PlayerController | null = null;
   
   // Game loop
   private isRunning: boolean = false;
@@ -192,14 +196,80 @@ export class GameEngine {
       // Initialize all systems through integration manager
       updateProgress(95, 'Integrating systems...');
       await this.integrationManager.initializeAll();
+      
+      // Initialize player controller for camera movement and controls
+      updateProgress(98, 'Setting up player controls...');
+      await this.initializePlayerController();
+      
       updateProgress(100, 'All systems ready!');
       
       console.log('[GameEngine] ✓ All 39 systems initialized successfully!');
+      console.log('[GameEngine] ✓ Player controller ready!');
       console.log('[GameEngine] Game is ready to start!');
       
     } catch (error) {
       console.error('[GameEngine] ✗ Initialization failed:', error);
       throw error;
+    }
+  }
+  
+  /**
+   * Initialize player controller for camera movement
+   */
+  private async initializePlayerController(): Promise<void> {
+    console.log('[GameEngine] Initializing player controller...');
+    
+    // Set initial camera position above terrain
+    const startPosition = new THREE.Vector3(0, 25, 30);
+    this.camera.position.copy(startPosition);
+    
+    // Create player controller
+    this.playerController = new PlayerController(this.camera, startPosition);
+    
+    // Try to load a simple player character model (visual representation)
+    await this.loadPlayerCharacter(startPosition);
+    
+    console.log('[GameEngine] ✓ Player controller initialized');
+  }
+  
+  /**
+   * Load player character model from assets
+   */
+  private async loadPlayerCharacter(position: THREE.Vector3): Promise<void> {
+    try {
+      // Use modular character parts from KayKit assets
+      const characterParts = [
+        '/extracted_assets/KayKit_Dungeon_Pack/Models/Characters/obj/character_knightBody.obj',
+        '/extracted_assets/KayKit_Dungeon_Pack/Models/Characters/obj/character_knightHelmet.obj',
+        '/extracted_assets/KayKit_Dungeon_Pack/Models/Characters/obj/character_knightArmLeft.obj',
+        '/extracted_assets/KayKit_Dungeon_Pack/Models/Characters/obj/character_knightArmRight.obj'
+      ];
+      
+      const playerGroup = new THREE.Group();
+      playerGroup.name = 'player_character';
+      
+      for (const partPath of characterParts) {
+        try {
+          const part = await this.assetLoader.loadModel(partPath);
+          part.scale.set(1.5, 1.5, 1.5); // Scale up character
+          playerGroup.add(part);
+        } catch (error) {
+          console.warn(`Failed to load character part: ${partPath}`, error);
+        }
+      }
+      
+      if (playerGroup.children.length > 0) {
+        playerGroup.position.copy(position);
+        this.scene.add(playerGroup);
+        
+        // Store reference to update position in game loop
+        (this as any).playerCharacter = playerGroup;
+        
+        console.log('[GameEngine] ✓ Player character model loaded');
+      }
+    } catch (error) {
+      console.warn('[GameEngine] Could not load player character model:', error);
+      // Not critical - game can still run with just camera
     }
   }
   
@@ -410,6 +480,25 @@ export class GameEngine {
    * Update all systems
    */
   private update(deltaTime: number): void {
+    // Update player controller (camera movement and input)
+    if (this.playerController) {
+      // Get terrain height at player position for collision
+      const terrainGen = this.integrationManager.getSystem<RealAssetTerrainGenerator>('terrain');
+      const terrainHeight = terrainGen 
+        ? terrainGen.getHeight(this.camera.position.x, this.camera.position.z)
+        : 0;
+      
+      this.playerController.update(deltaTime, terrainHeight);
+      
+      // Update player character model position if it exists
+      const playerCharacter = (this as any).playerCharacter as THREE.Group | undefined;
+      if (playerCharacter) {
+        playerCharacter.position.copy(this.camera.position);
+        playerCharacter.position.y -= 2; // Place at feet level
+        playerCharacter.rotation.y = (this.playerController as any).yaw; // Match camera rotation
+      }
+    }
+    
     // Update player position in chunk manager
     const chunkManager = this.integrationManager.getSystem<ChunkManager>('chunks');
     if (chunkManager) {
