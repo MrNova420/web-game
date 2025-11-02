@@ -6,6 +6,20 @@
 ![Progress](https://img.shields.io/badge/progress-4%25-orange)
 ![Platform](https://img.shields.io/badge/platform-web-green)
 
+## 🌐 Deploy to Netlify (Play Online Now!)
+
+[![Deploy to Netlify](https://www.netlify.com/img/deploy/button.svg)](https://app.netlify.com/start/deploy?repository=https://github.com/MrNova420/web-game)
+
+**Click above to deploy and play online in 2-5 minutes!** 🎮
+
+After deployment:
+- ✅ Menu appears instantly
+- ✅ Assets preload in background
+- ✅ Click "Play" to start
+- ✅ Full game ready online
+
+**See:** [NETLIFY_DEPLOYMENT.md](NETLIFY_DEPLOYMENT.md) for complete deployment guide.
+
 ---
 
 ## 🎮 Project Vision
@@ -23,12 +37,16 @@ Build a massive, immersive multiplayer 3D open-world survival fantasy web game f
 
 ## 📚 Documentation
 
+**📖 COMPLETE DOCUMENTATION INDEX:**
+- **[DOCUMENTATION_INDEX.md](DOCUMENTATION_INDEX.md)** 📚 **ALL DOCS IN ONE PLACE** - Find any guide, tutorial, or reference
+
 **🤖 FOR AUTONOMOUS DEVELOPMENT:**
 - **[AUTONOMOUS_DEVELOPMENT_GUIDE.md](AUTONOMOUS_DEVELOPMENT_GUIDE.md)** ⭐ **MASTER REFERENCE** - Single source of truth for fully automated development
 
 **🎮 FOR GETTING STARTED:**
 - **[START_GUIDE.md](START_GUIDE.md)** 🚀 **COMPREHENSIVE START GUIDE** - All methods to start the game (dev, prod, Docker, etc.)
 - **[QUICK_START.md](QUICK_START.md)** - Quick developer setup
+- **[NETLIFY_DEPLOYMENT.md](NETLIFY_DEPLOYMENT.md)** 🌐 **DEPLOY TO NETLIFY** - Complete Netlify deployment guide
 - **[DEPLOYMENT_GUIDE.md](DEPLOYMENT_GUIDE.md)** - Production deployment options
 
 **Supporting Documentation:**
