@@ -13,7 +13,7 @@ export class GrassSystem {
   private assetLoader: AssetLoader;
   private grassGeometry: THREE.BufferGeometry | null = null;
   private grassMaterial: THREE.Material;
-  private instancesPerChunk = 500; // Grass blades per chunk
+  private instancesPerChunk = 200; // REDUCED from 500 for better performance
   private dummy = new THREE.Object3D();
   private grassAssets = [
     '/extracted_assets/Stylized_Nature_MegaKit/OBJ/Grass_Common_Short.obj',

@@ -24,6 +24,7 @@ export class SkyboxManager {
       this.scene.remove(this.currentSkybox);
       this.currentSkybox.geometry.dispose();
       (this.currentSkybox.material as THREE.Material).dispose();
+      this.currentSkybox = null;
     }
 
     const skyboxPath = this.skyboxes[type];
@@ -44,8 +45,10 @@ export class SkyboxManager {
       console.log(`Skybox loaded: ${type}`);
     } catch (error) {
       console.error(`Failed to load skybox: ${type}`, error);
-      // Fallback to colored background
+      // FIX: Don't add the skybox mesh if texture failed to load
+      // Just use colored background as fallback
       this.scene.background = new THREE.Color(0x87ceeb);
+      console.log('Using fallback sky color instead of skybox sphere');
     }
   }
 

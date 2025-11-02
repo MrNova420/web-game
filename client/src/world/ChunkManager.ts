@@ -9,7 +9,7 @@ import { GrassSystem } from './GrassSystem';
  */
 export class ChunkManager {
   private chunks = new Map<string, THREE.Group>();
-  private renderDistance = 5;
+  private renderDistance = 2; // REDUCED from 5 to 2 for better performance (9 chunks instead of 121)
   private terrainGenerator: RealAssetTerrainGenerator;
   private vegetationManager: VegetationManager | null = null;
   private grassSystem: GrassSystem | null = null;
