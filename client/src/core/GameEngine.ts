@@ -132,12 +132,26 @@ export class GameEngine {
     }
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
     
-    // Append to existing canvas or body
+    // Remove any existing canvas
     const existingCanvas = document.getElementById('game-canvas');
-    if (existingCanvas && existingCanvas !== this.renderer.domElement) {
+    if (existingCanvas) {
       existingCanvas.remove();
     }
-    document.body.appendChild(this.renderer.domElement);
+    
+    // Style the renderer's canvas properly
+    const canvas = this.renderer.domElement;
+    canvas.id = 'game-canvas';
+    canvas.style.width = '100vw';
+    canvas.style.height = '100vh';
+    canvas.style.display = 'block';
+    canvas.style.position = 'fixed';
+    canvas.style.top = '0';
+    canvas.style.left = '0';
+    canvas.style.zIndex = '1';  // Below UI but above everything else
+    
+    document.body.appendChild(canvas);
+    
+    console.log('[GameEngine] Canvas appended to body with proper styling');
     
     // Handle window resize
     window.addEventListener('resize', () => {
@@ -219,14 +233,18 @@ export class GameEngine {
   private initializePlayerController(): void {
     console.log('[GameEngine] Initializing player controller...');
     
-    // Set camera at spawn position
+    // Set camera at spawn position looking down at terrain
     const startPosition = new THREE.Vector3(0, 25, 30);
     this.camera.position.copy(startPosition);
+    
+    // Point camera to look at the terrain origin
+    this.camera.lookAt(0, 0, 0);
     
     // Create player controller for WASD + mouse controls
     this.playerController = new PlayerController(this.camera, startPosition);
     
     console.log('[GameEngine] ✓ Player controller initialized - WASD + Mouse controls active');
+    console.log('[GameEngine] ✓ Camera looking at terrain origin (0, 0, 0)');
   }
   
   private async initializeWorldSystems(): Promise<void> {
@@ -404,6 +422,9 @@ export class GameEngine {
     }
     
     console.log('[GameEngine] Starting game loop...');
+    console.log('[GameEngine] Scene children count:', this.scene.children.length);
+    console.log('[GameEngine] Scene children:', this.scene.children.map(c => c.type + (c.name ? ` (${c.name})` : '')));
+    
     this.isRunning = true;
     this.isPaused = false;
     this.lastTime = performance.now();
