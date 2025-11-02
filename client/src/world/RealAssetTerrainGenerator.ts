@@ -17,6 +17,14 @@ export class RealAssetTerrainGenerator {
   private heightScale = 20;
   private chunks = new Map<string, THREE.Group>();
   
+  // PERFORMANCE FIX: Store instanced meshes for each tile type
+  // Load ONE model, then copy/instance it many times (not cloning!)
+  private instancedMeshes = new Map<string, THREE.InstancedMesh>();
+  private tileGeometries = new Map<string, THREE.BufferGeometry>();
+  private tileMaterials = new Map<string, THREE.Material>();
+  private instanceCounts = new Map<string, number>();
+  private tempObject = new THREE.Object3D();
+  
   // ACTUAL ground tile models organized by biome
   private terrainTiles = {
     forest: {
@@ -78,10 +86,70 @@ export class RealAssetTerrainGenerator {
     this.assetLoader = assetLoader;
     this.noise = createNoise2D(() => seed);
     this.biomeSystem = new BiomeSystem();
+    console.log('[TerrainGenerator] PERFORMANCE FIX: Using GPU instancing - load ONE model, copy many times');
   }
 
   /**
-   * Generate terrain chunk using ACTUAL tile models
+   * PERFORMANCE FIX: Pre-load all tile models and create instanced meshes
+   * This loads each model ONCE and uses GPU instancing to render many copies
+   */
+  async preloadTileModels(scene: THREE.Scene): Promise<void> {
+    console.log('[TerrainGenerator] Pre-loading tile models for instancing...');
+    
+    const allTilePaths = new Set<string>();
+    
+    // Collect all unique tile paths
+    for (const biome of Object.values(this.terrainTiles)) {
+      for (const tilePath of biome.tiles) {
+        allTilePaths.add(tilePath);
+      }
+    }
+    
+    // Load each unique tile model ONCE
+    for (const tilePath of allTilePaths) {
+      try {
+        const model = await this.assetLoader.loadModel(tilePath);
+        
+        // Extract geometry and material from model
+        let geometry: THREE.BufferGeometry | null = null;
+        let material: THREE.Material | null = null;
+        
+        model.traverse((child) => {
+          if (child instanceof THREE.Mesh && !geometry) {
+            geometry = child.geometry.clone();
+            material = child.material instanceof Array ? child.material[0].clone() : child.material.clone();
+          }
+        });
+        
+        if (geometry && material) {
+          this.tileGeometries.set(tilePath, geometry);
+          this.tileMaterials.set(tilePath, material);
+          
+          // Create instanced mesh with capacity for many instances
+          // Estimate: 32x32 tiles per chunk, 5x5 chunks = 25600 tiles max
+          const maxInstances = 30000;
+          const instancedMesh = new THREE.InstancedMesh(geometry, material, maxInstances);
+          instancedMesh.castShadow = true;
+          instancedMesh.receiveShadow = true;
+          instancedMesh.count = 0; // Start with 0, will increment as we add instances
+          
+          scene.add(instancedMesh);
+          this.instancedMeshes.set(tilePath, instancedMesh);
+          this.instanceCounts.set(tilePath, 0);
+          
+          console.log(`[TerrainGenerator] Loaded and instanced: ${tilePath.split('/').pop()}`);
+        }
+      } catch (error) {
+        console.warn(`[TerrainGenerator] Failed to load tile: ${tilePath}`, error);
+      }
+    }
+    
+    console.log(`[TerrainGenerator] Pre-loaded ${allTilePaths.size} unique tile models with instancing`);
+  }
+
+  /**
+   * Generate terrain chunk using INSTANCED tile models (PERFORMANCE FIX)
+   * Instead of cloning models, we use GPU instancing - ONE model, many copies
    */
   async generateChunk(chunkX: number, chunkZ: number, scene: THREE.Scene): Promise<THREE.Group> {
     const key = `${chunkX},${chunkZ}`;
@@ -107,7 +175,8 @@ export class RealAssetTerrainGenerator {
     // Get tile assets for this biome
     const biomeData = this.terrainTiles[biome as keyof typeof this.terrainTiles] || this.terrainTiles.plains;
     
-    // Place tiles in a grid to create terrain
+    // PERFORMANCE FIX: Use instancing instead of cloning
+    // Place tiles in a grid using instanced meshes
     for (let x = 0; x < tilesPerSide; x++) {
       for (let z = 0; z < tilesPerSide; z++) {
         const worldX = baseX + x * this.tileSize;
@@ -117,23 +186,34 @@ export class RealAssetTerrainGenerator {
         try {
           // Random tile variation
           const tileAsset = biomeData.tiles[Math.floor(Math.random() * biomeData.tiles.length)];
-          const tile = await this.assetLoader.loadModel(tileAsset);
+          const instancedMesh = this.instancedMeshes.get(tileAsset);
           
-          // Position tile
-          tile.position.set(worldX, height, worldZ);
-          // Random rotation for variety
-          tile.rotation.y = (Math.floor(Math.random() * 4)) * (Math.PI / 2);
-          
-          chunkGroup.add(tile);
+          if (instancedMesh) {
+            // Set position, rotation, scale for this instance
+            this.tempObject.position.set(worldX, height, worldZ);
+            this.tempObject.rotation.y = (Math.floor(Math.random() * 4)) * (Math.PI / 2);
+            this.tempObject.scale.set(1, 1, 1);
+            this.tempObject.updateMatrix();
+            
+            // Get current instance count for this tile type
+            const currentCount = this.instanceCounts.get(tileAsset) || 0;
+            
+            // Set the matrix for this instance
+            instancedMesh.setMatrixAt(currentCount, this.tempObject.matrix);
+            
+            // Increment count
+            this.instanceCounts.set(tileAsset, currentCount + 1);
+            instancedMesh.count = currentCount + 1;
+            instancedMesh.instanceMatrix.needsUpdate = true;
+          }
         } catch (error) {
-          console.warn(`Failed to load terrain tile:`, error);
+          console.warn(`Failed to instance terrain tile:`, error);
         }
       }
     }
     
-    scene.add(chunkGroup);
     this.chunks.set(key, chunkGroup);
-    console.log(`Generated terrain chunk ${key} with ${chunkGroup.children.length} tile models`);
+    console.log(`Generated INSTANCED terrain chunk ${key} with ${tilesPerSide * tilesPerSide} tile instances for ${biome} biome`);
     
     return chunkGroup;
   }
