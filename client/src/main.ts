@@ -28,24 +28,9 @@ async function main() {
     // Small delay to let loading screen render
     await new Promise(resolve => setTimeout(resolve, 100));
     
-    // Clear any existing canvas to prevent duplicates
-    const existingCanvas = document.getElementById('game-canvas');
-    if (existingCanvas) {
-      existingCanvas.remove();
-    }
-    
     loadingManager.updateProgress(15, 'Creating game canvas...');
     
-    // Create optimized canvas
-    const canvas = document.createElement('canvas');
-    canvas.id = 'game-canvas';
-    canvas.style.width = '100vw';
-    canvas.style.height = '100vh';
-    canvas.style.display = 'block';
-    canvas.style.position = 'fixed';
-    canvas.style.top = '0';
-    canvas.style.left = '0';
-    document.body.appendChild(canvas);
+    // Canvas will be created by GameEngine
     
     loadingManager.updateProgress(20, 'Initializing game engine...');
     

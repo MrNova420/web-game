@@ -132,12 +132,26 @@ export class GameEngine {
     }
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
     
-    // Append to existing canvas or body
+    // Remove any existing canvas
     const existingCanvas = document.getElementById('game-canvas');
-    if (existingCanvas && existingCanvas !== this.renderer.domElement) {
+    if (existingCanvas) {
       existingCanvas.remove();
     }
-    document.body.appendChild(this.renderer.domElement);
+    
+    // Style the renderer's canvas properly
+    const canvas = this.renderer.domElement;
+    canvas.id = 'game-canvas';
+    canvas.style.width = '100vw';
+    canvas.style.height = '100vh';
+    canvas.style.display = 'block';
+    canvas.style.position = 'fixed';
+    canvas.style.top = '0';
+    canvas.style.left = '0';
+    canvas.style.zIndex = '1';  // Below UI but above everything else
+    
+    document.body.appendChild(canvas);
+    
+    console.log('[GameEngine] Canvas appended to body with proper styling');
     
     // Handle window resize
     window.addEventListener('resize', () => {
@@ -264,6 +278,17 @@ export class GameEngine {
     // Link vegetation and grass to chunk manager
     chunkManager.setVegetationManager(vegetation);
     chunkManager.setGrassSystem(grass);
+    
+    // DEBUG: Add test cube to verify rendering works
+    console.log('[GameEngine] Adding debug test cube...');
+    const testGeometry = new THREE.BoxGeometry(10, 10, 10);
+    const testMaterial = new THREE.MeshStandardMaterial({ color: 0xff0000, emissive: 0x440000 });
+    const testCube = new THREE.Mesh(testGeometry, testMaterial);
+    testCube.position.set(0, 5, 0);  // Right in front of camera
+    testCube.castShadow = true;
+    testCube.receiveShadow = true;
+    this.scene.add(testCube);
+    console.log('[GameEngine] Test cube added at (0, 5, 0) - should be visible!');
     
     // Skybox - FIXED to load properly
     const skybox = new SkyboxManager(this.scene);
@@ -404,6 +429,9 @@ export class GameEngine {
     }
     
     console.log('[GameEngine] Starting game loop...');
+    console.log('[GameEngine] Scene children count:', this.scene.children.length);
+    console.log('[GameEngine] Scene children:', this.scene.children.map(c => c.type + (c.name ? ` (${c.name})` : '')));
+    
     this.isRunning = true;
     this.isPaused = false;
     this.lastTime = performance.now();
