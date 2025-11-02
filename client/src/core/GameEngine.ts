@@ -39,6 +39,7 @@ import { DebugSystem } from '../systems/DebugSystem';
 import { LODManager } from '../systems/LODManager';
 import { DungeonSystem } from '../systems/DungeonSystem';
 import { PerformanceOptimizer } from '../utils/PerformanceOptimizer';
+import { PlayerController } from './PlayerController';
 
 // Type for progress callback
 type ProgressCallback = (progress: number, message: string) => void;
@@ -57,6 +58,9 @@ export class GameEngine {
   private integrationManager: IntegrationManager;
   private assetLoader: AssetLoader;
   private perfOptimizer: PerformanceOptimizer;
+  
+  // CONTROLS FIX: Add PlayerController
+  private playerController: PlayerController | null = null;
   
   // Game loop
   private isRunning: boolean = false;
@@ -192,9 +196,15 @@ export class GameEngine {
       // Initialize all systems through integration manager
       updateProgress(95, 'Integrating systems...');
       await this.integrationManager.initializeAll();
+      
+      // CONTROLS FIX: Initialize player controller
+      updateProgress(98, 'Setting up player controls...');
+      this.initializePlayerController();
+      
       updateProgress(100, 'All systems ready!');
       
       console.log('[GameEngine] ✓ All 39 systems initialized successfully!');
+      console.log('[GameEngine] ✓ Player controls ready!');
       console.log('[GameEngine] Game is ready to start!');
       
     } catch (error) {
@@ -203,12 +213,32 @@ export class GameEngine {
     }
   }
   
+  /**
+   * CONTROLS FIX: Initialize player controller for movement
+   */
+  private initializePlayerController(): void {
+    console.log('[GameEngine] Initializing player controller...');
+    
+    // Set camera at spawn position
+    const startPosition = new THREE.Vector3(0, 25, 30);
+    this.camera.position.copy(startPosition);
+    
+    // Create player controller for WASD + mouse controls
+    this.playerController = new PlayerController(this.camera, startPosition);
+    
+    console.log('[GameEngine] ✓ Player controller initialized - WASD + Mouse controls active');
+  }
+  
   private async initializeWorldSystems(): Promise<void> {
     console.log('[GameEngine] Initializing World Systems...');
     
-    // Terrain
+    // Terrain with INSTANCING fix
     const terrainGen = new RealAssetTerrainGenerator(this.assetLoader);
     this.integrationManager.registerSystem('terrain', terrainGen, []);
+    
+    // PERFORMANCE FIX: Pre-load all tile models for instancing
+    console.log('[GameEngine] Pre-loading terrain tiles for GPU instancing...');
+    await terrainGen.preloadTileModels(this.scene);
     
     // Biomes
     const biomeSystem = new BiomeSystem();
@@ -219,9 +249,13 @@ export class GameEngine {
     chunkManager.setScene(this.scene);
     this.integrationManager.registerSystem('chunks', chunkManager, ['terrain', 'biomes']);
     
-    // Vegetation - pass asset loader and terrain generator
+    // Vegetation - pass asset loader and terrain generator  
     const vegetation = new VegetationManager(this.assetLoader, terrainGen);
     this.integrationManager.registerSystem('vegetation', vegetation, ['terrain']);
+    
+    // PERFORMANCE FIX: Pre-load all vegetation models for instancing
+    console.log('[GameEngine] Pre-loading vegetation models for GPU instancing...');
+    await vegetation.preloadVegetationModels(this.scene);
     
     // Grass - pass terrain generator and asset loader
     const grass = new GrassSystem(terrainGen, this.assetLoader);
@@ -231,9 +265,10 @@ export class GameEngine {
     chunkManager.setVegetationManager(vegetation);
     chunkManager.setGrassSystem(grass);
     
-    // Skybox
+    // Skybox - FIXED to load properly
     const skybox = new SkyboxManager(this.scene);
     this.integrationManager.registerSystem('skybox', skybox, []);
+    await skybox.loadSkybox('day'); // Load skybox immediately
     
     // Create lights for day/night cycle
     const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
@@ -410,6 +445,16 @@ export class GameEngine {
    * Update all systems
    */
   private update(deltaTime: number): void {
+    // CONTROLS FIX: Update player controller for movement
+    if (this.playerController) {
+      const terrainGen = this.integrationManager.getSystem<RealAssetTerrainGenerator>('terrain');
+      const terrainHeight = terrainGen 
+        ? terrainGen.getHeight(this.camera.position.x, this.camera.position.z)
+        : 0;
+      
+      this.playerController.update(deltaTime, terrainHeight);
+    }
+    
     // Update player position in chunk manager
     const chunkManager = this.integrationManager.getSystem<ChunkManager>('chunks');
     if (chunkManager) {

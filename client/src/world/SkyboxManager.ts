@@ -24,29 +24,28 @@ export class SkyboxManager {
       this.scene.remove(this.currentSkybox);
       this.currentSkybox.geometry.dispose();
       (this.currentSkybox.material as THREE.Material).dispose();
+      this.currentSkybox = null;
     }
 
     const skyboxPath = this.skyboxes[type];
     
-    try {
-      const texture = await this.textureLoader.loadAsync(skyboxPath);
-      
-      // Create a large sphere for the skybox
-      const geometry = new THREE.SphereGeometry(500, 32, 32);
-      const material = new THREE.MeshBasicMaterial({
-        map: texture,
-        side: THREE.BackSide // Render inside of sphere
-      });
+    // FIX: Properly load skybox texture, no fallback - must work!
+    const texture = await this.textureLoader.loadAsync(skyboxPath);
+    texture.colorSpace = THREE.SRGBColorSpace;
+    
+    // Create a large sphere for the skybox
+    const geometry = new THREE.SphereGeometry(500, 32, 32);
+    const material = new THREE.MeshBasicMaterial({
+      map: texture,
+      side: THREE.BackSide, // Render inside of sphere
+      depthWrite: false
+    });
 
-      this.currentSkybox = new THREE.Mesh(geometry, material);
-      this.scene.add(this.currentSkybox);
-      
-      console.log(`Skybox loaded: ${type}`);
-    } catch (error) {
-      console.error(`Failed to load skybox: ${type}`, error);
-      // Fallback to colored background
-      this.scene.background = new THREE.Color(0x87ceeb);
-    }
+    this.currentSkybox = new THREE.Mesh(geometry, material);
+    this.currentSkybox.renderOrder = -1; // Render skybox first
+    this.scene.add(this.currentSkybox);
+    
+    console.log(`[SkyboxManager] Skybox loaded successfully: ${type}`);
   }
 
   setSkyboxTime(hour: number) {

@@ -8,6 +8,13 @@ import { BiomeSystem } from './BiomeSystem';
  * NO PlaneGeometry - uses actual floor tile OBJ models from extracted_assets
  * Builds terrain by placing actual 3D tile models in a grid
  */
+/**
+ * REAL TerrainGenerator using ONLY actual asset models
+ * NO PlaneGeometry - uses actual floor tile OBJ models from extracted_assets
+ * Builds terrain by placing actual 3D tile models in a grid
+ * 
+ * PERFORMANCE: Uses GPU instancing when available, falls back to CPU rendering
+ */
 export class RealAssetTerrainGenerator {
   private assetLoader: AssetLoader;
   private noise: any;
@@ -16,6 +23,18 @@ export class RealAssetTerrainGenerator {
   private tileSize = 2; // Each tile is roughly 2x2 units
   private heightScale = 20;
   private chunks = new Map<string, THREE.Group>();
+  
+  // PERFORMANCE FIX: Store instanced meshes for each tile type (GPU)
+  // Load ONE model, then copy/instance it many times (not cloning!)
+  private instancedMeshes = new Map<string, THREE.InstancedMesh>();
+  private tileGeometries = new Map<string, THREE.BufferGeometry>();
+  private tileMaterials = new Map<string, THREE.Material>();
+  private instanceCounts = new Map<string, number>();
+  private tempObject = new THREE.Object3D();
+  
+  // CPU RENDERING FALLBACK: For universal deployment
+  private useGPUInstancing: boolean = true;
+  private cpuMeshCache = new Map<string, THREE.Object3D>();
   
   // ACTUAL ground tile models organized by biome
   private terrainTiles = {
@@ -78,10 +97,112 @@ export class RealAssetTerrainGenerator {
     this.assetLoader = assetLoader;
     this.noise = createNoise2D(() => seed);
     this.biomeSystem = new BiomeSystem();
+    
+    // Detect WebGL support for GPU instancing
+    this.useGPUInstancing = this.detectWebGLSupport();
+    
+    if (this.useGPUInstancing) {
+      console.log('[TerrainGenerator] GPU instancing available - using InstancedMesh for performance');
+    } else {
+      console.log('[TerrainGenerator] GPU instancing not available - using CPU rendering fallback');
+    }
+  }
+  
+  /**
+   * Detect if WebGL and GPU instancing are supported
+   */
+  private detectWebGLSupport(): boolean {
+    try {
+      const canvas = document.createElement('canvas');
+      const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+      
+      if (!gl) {
+        console.warn('[TerrainGenerator] WebGL not supported, using CPU fallback');
+        return false;
+      }
+      
+      // Check if InstancedMesh is supported
+      if (typeof THREE.InstancedMesh === 'undefined') {
+        console.warn('[TerrainGenerator] InstancedMesh not supported, using CPU fallback');
+        return false;
+      }
+      
+      return true;
+    } catch (e) {
+      console.warn('[TerrainGenerator] WebGL detection failed, using CPU fallback', e);
+      return false;
+    }
   }
 
   /**
-   * Generate terrain chunk using ACTUAL tile models
+   * PERFORMANCE FIX: Pre-load all tile models and create instanced meshes (GPU) or cache (CPU)
+   * This loads each model ONCE and uses GPU instancing or CPU cloning to render many copies
+   */
+  async preloadTileModels(scene: THREE.Scene): Promise<void> {
+    console.log('[TerrainGenerator] Pre-loading tile models...');
+    
+    const allTilePaths = new Set<string>();
+    
+    // Collect all unique tile paths
+    for (const biome of Object.values(this.terrainTiles)) {
+      for (const tilePath of biome.tiles) {
+        allTilePaths.add(tilePath);
+      }
+    }
+    
+    // Load each unique tile model ONCE
+    for (const tilePath of allTilePaths) {
+      try {
+        const model = await this.assetLoader.loadModel(tilePath);
+        
+        // Extract geometry and material from model
+        let geometry: THREE.BufferGeometry | null = null;
+        let material: THREE.Material | null = null;
+        
+        model.traverse((child) => {
+          if (child instanceof THREE.Mesh && !geometry) {
+            geometry = child.geometry.clone();
+            material = child.material instanceof Array ? child.material[0].clone() : child.material.clone();
+          }
+        });
+        
+        if (geometry && material) {
+          this.tileGeometries.set(tilePath, geometry);
+          this.tileMaterials.set(tilePath, material);
+          
+          if (this.useGPUInstancing) {
+            // GPU MODE: Create instanced mesh with capacity for many instances
+            const maxInstances = 30000;
+            const instancedMesh = new THREE.InstancedMesh(geometry, material, maxInstances);
+            instancedMesh.castShadow = true;
+            instancedMesh.receiveShadow = true;
+            instancedMesh.count = 0;
+            
+            scene.add(instancedMesh);
+            this.instancedMeshes.set(tilePath, instancedMesh);
+            this.instanceCounts.set(tilePath, 0);
+          } else {
+            // CPU MODE: Cache the model for cloning
+            const cachedMesh = new THREE.Mesh(geometry, material);
+            cachedMesh.castShadow = true;
+            cachedMesh.receiveShadow = true;
+            this.cpuMeshCache.set(tilePath, cachedMesh);
+          }
+          
+          console.log(`[TerrainGenerator] Loaded ${this.useGPUInstancing ? '(GPU)' : '(CPU)'}: ${tilePath.split('/').pop()}`);
+        }
+      } catch (error) {
+        console.warn(`[TerrainGenerator] Failed to load tile: ${tilePath}`, error);
+      }
+    }
+    
+    console.log(`[TerrainGenerator] Pre-loaded ${allTilePaths.size} unique tile models (${this.useGPUInstancing ? 'GPU instancing' : 'CPU rendering'})`);
+  }
+
+  /**
+   * Generate terrain chunk using INSTANCED tile models (GPU) or cloned meshes (CPU)
+   * GPU mode: Uses InstancedMesh - ONE model, many copies in single draw call
+   * CPU mode: Uses cloned meshes - compatible with all devices
    */
   async generateChunk(chunkX: number, chunkZ: number, scene: THREE.Scene): Promise<THREE.Group> {
     const key = `${chunkX},${chunkZ}`;
@@ -107,7 +228,7 @@ export class RealAssetTerrainGenerator {
     // Get tile assets for this biome
     const biomeData = this.terrainTiles[biome as keyof typeof this.terrainTiles] || this.terrainTiles.plains;
     
-    // Place tiles in a grid to create terrain
+    // Place tiles in a grid
     for (let x = 0; x < tilesPerSide; x++) {
       for (let z = 0; z < tilesPerSide; z++) {
         const worldX = baseX + x * this.tileSize;
@@ -117,23 +238,47 @@ export class RealAssetTerrainGenerator {
         try {
           // Random tile variation
           const tileAsset = biomeData.tiles[Math.floor(Math.random() * biomeData.tiles.length)];
-          const tile = await this.assetLoader.loadModel(tileAsset);
           
-          // Position tile
-          tile.position.set(worldX, height, worldZ);
-          // Random rotation for variety
-          tile.rotation.y = (Math.floor(Math.random() * 4)) * (Math.PI / 2);
-          
-          chunkGroup.add(tile);
+          if (this.useGPUInstancing) {
+            // GPU MODE: Use instancing
+            const instancedMesh = this.instancedMeshes.get(tileAsset);
+            
+            if (instancedMesh) {
+              this.tempObject.position.set(worldX, height, worldZ);
+              this.tempObject.rotation.y = (Math.floor(Math.random() * 4)) * (Math.PI / 2);
+              this.tempObject.scale.set(1, 1, 1);
+              this.tempObject.updateMatrix();
+              
+              const currentCount = this.instanceCounts.get(tileAsset) || 0;
+              instancedMesh.setMatrixAt(currentCount, this.tempObject.matrix);
+              this.instanceCounts.set(tileAsset, currentCount + 1);
+              instancedMesh.count = currentCount + 1;
+              instancedMesh.instanceMatrix.needsUpdate = true;
+            }
+          } else {
+            // CPU MODE: Clone cached mesh
+            const cachedMesh = this.cpuMeshCache.get(tileAsset);
+            
+            if (cachedMesh) {
+              const tile = cachedMesh.clone();
+              tile.position.set(worldX, height, worldZ);
+              tile.rotation.y = (Math.floor(Math.random() * 4)) * (Math.PI / 2);
+              chunkGroup.add(tile);
+            }
+          }
         } catch (error) {
-          console.warn(`Failed to load terrain tile:`, error);
+          console.warn(`Failed to place terrain tile:`, error);
         }
       }
     }
     
-    scene.add(chunkGroup);
+    if (!this.useGPUInstancing) {
+      // CPU mode: Add chunk group to scene
+      scene.add(chunkGroup);
+    }
+    
     this.chunks.set(key, chunkGroup);
-    console.log(`Generated terrain chunk ${key} with ${chunkGroup.children.length} tile models`);
+    console.log(`Generated ${this.useGPUInstancing ? 'INSTANCED' : 'CPU'} terrain chunk ${key} with ${tilesPerSide * tilesPerSide} tiles for ${biome} biome`);
     
     return chunkGroup;
   }
