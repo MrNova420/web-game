@@ -118,7 +118,8 @@ export class AssetPreloader {
   private async preloadCategory(categoryName: string, assets: string[], label: string): Promise<void> {
     console.log(`[AssetPreloader] Preloading ${categoryName}...`);
     
-    const promises = assets.map(async (assetPath) => {
+    // Load assets sequentially to avoid race conditions with progress counter
+    for (const assetPath of assets) {
       try {
         // Try to load the asset
         await this.assetLoader.loadModel(assetPath);
@@ -134,9 +135,7 @@ export class AssetPreloader {
         console.warn(`[AssetPreloader] Asset not found (will use fallback): ${assetPath}`);
         this.loadedAssets++;
       }
-    });
-
-    await Promise.all(promises);
+    }
   }
 
   /**

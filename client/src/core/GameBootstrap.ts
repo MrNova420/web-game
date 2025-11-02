@@ -161,9 +161,12 @@ export class GameBootstrap {
       console.log('=================================================');
       this.logGameInfo();
       
-      // Expose to window for debugging
-      (window as Window & { gameEngine?: GameEngine }).gameEngine = this.gameEngine;
-      (window as Window & { perfOptimizer?: PerformanceOptimizer }).perfOptimizer = this.perfOptimizer;
+      // Expose to window for debugging (development only)
+      if (process.env.NODE_ENV !== 'production') {
+        (window as Window & { gameEngine?: GameEngine }).gameEngine = this.gameEngine;
+        (window as Window & { perfOptimizer?: PerformanceOptimizer }).perfOptimizer = this.perfOptimizer;
+        console.log('[Bootstrap] Debug: gameEngine and perfOptimizer exposed to window (dev mode)');
+      }
       
       // Set up cleanup
       this.setupCleanup();
@@ -228,7 +231,44 @@ export class GameBootstrap {
     if (this.loadingManager) {
       this.loadingManager.showError(message);
     } else {
-      alert(`Game Error: ${message}\n\nPlease check the console (F12) for more details.`);
+      // Fallback: Create a themed error display if loading manager not available
+      const errorDiv = document.createElement('div');
+      errorDiv.style.cssText = `
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: linear-gradient(135deg, #1a1a2e 0%, #2d2d44 100%);
+        color: white;
+        padding: 30px;
+        border-radius: 15px;
+        text-align: center;
+        max-width: 500px;
+        border: 3px solid #ff4444;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8);
+        z-index: 99999;
+      `;
+      errorDiv.innerHTML = `
+        <h2 style="color: #ff4444; margin-bottom: 20px;">⚠️ Game Failed to Load</h2>
+        <p style="margin-bottom: 20px; line-height: 1.6;">${message}</p>
+        <p style="font-size: 14px; color: rgba(255, 255, 255, 0.7); margin-bottom: 20px;">
+          Check the console (F12) for more details.
+        </p>
+        <button onclick="location.reload()" style="
+          background: linear-gradient(135deg, #8a2be2 0%, #9b59b6 100%);
+          color: white;
+          border: none;
+          padding: 15px 30px;
+          font-size: 18px;
+          border-radius: 10px;
+          cursor: pointer;
+          font-weight: bold;
+          transition: all 0.3s ease;
+        " onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+          Reload Game
+        </button>
+      `;
+      document.body.appendChild(errorDiv);
     }
   }
 

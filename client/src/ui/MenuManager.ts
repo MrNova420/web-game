@@ -32,7 +32,10 @@ export class MenuManager {
       transition: opacity 0.5s ease;
     `;
 
-    // Video background
+    // Video background placeholder
+    // Note: Video background feature disabled - no video asset currently available
+    // When a video is available, uncomment and set the source:
+    // videoBackground.src = '/assets/background-video.mp4';
     const videoBackground = document.createElement('video');
     videoBackground.autoplay = true;
     videoBackground.loop = true;
@@ -47,9 +50,8 @@ export class MenuManager {
       object-fit: cover;
       z-index: -1;
       opacity: 0.3;
+      display: none;
     `;
-    // Note: Video source would need to be added if available
-    // videoBackground.src = '/assets/background-video.mp4';
 
     // Menu content
     const menuContent = document.createElement('div');
@@ -369,20 +371,41 @@ export class MenuManager {
     modal.appendChild(modalContent);
     document.body.appendChild(modal);
 
+    // Cleanup function to remove modal and all event listeners
+    const cleanup = () => {
+      modal.removeEventListener('click', modalClickHandler);
+      if (closeButton) {
+        closeButton.removeEventListener('click', closeClickHandler);
+        closeButton.removeEventListener('mouseenter', closeHoverInHandler);
+        closeButton.removeEventListener('mouseleave', closeHoverOutHandler);
+      }
+      modal.remove();
+    };
+
+    // Event handlers
+    const modalClickHandler = (e: Event) => {
+      if (e.target === modal) cleanup();
+    };
+
+    const closeClickHandler = () => cleanup();
+
+    const closeHoverInHandler = () => {
+      if (closeButton) closeButton.style.transform = 'scale(1.05)';
+    };
+
+    const closeHoverOutHandler = () => {
+      if (closeButton) closeButton.style.transform = 'scale(1)';
+    };
+
+    // Set up event listeners
     const closeButton = document.getElementById('modal-close');
     if (closeButton) {
-      closeButton.addEventListener('click', () => modal.remove());
-      closeButton.addEventListener('mouseenter', () => {
-        closeButton.style.transform = 'scale(1.05)';
-      });
-      closeButton.addEventListener('mouseleave', () => {
-        closeButton.style.transform = 'scale(1)';
-      });
+      closeButton.addEventListener('click', closeClickHandler);
+      closeButton.addEventListener('mouseenter', closeHoverInHandler);
+      closeButton.addEventListener('mouseleave', closeHoverOutHandler);
     }
 
-    modal.addEventListener('click', (e) => {
-      if (e.target === modal) modal.remove();
-    });
+    modal.addEventListener('click', modalClickHandler);
   }
 
   /**
