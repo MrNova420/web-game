@@ -279,17 +279,6 @@ export class GameEngine {
     chunkManager.setVegetationManager(vegetation);
     chunkManager.setGrassSystem(grass);
     
-    // DEBUG: Add test cube to verify rendering works
-    console.log('[GameEngine] Adding debug test cube...');
-    const testGeometry = new THREE.BoxGeometry(10, 10, 10);
-    const testMaterial = new THREE.MeshStandardMaterial({ color: 0xff0000, emissive: 0x440000 });
-    const testCube = new THREE.Mesh(testGeometry, testMaterial);
-    testCube.position.set(0, 5, 0);  // Right in front of camera
-    testCube.castShadow = true;
-    testCube.receiveShadow = true;
-    this.scene.add(testCube);
-    console.log('[GameEngine] Test cube added at (0, 5, 0) - should be visible!');
-    
     // Skybox - FIXED to load properly
     const skybox = new SkyboxManager(this.scene);
     this.integrationManager.registerSystem('skybox', skybox, []);
