@@ -233,14 +233,18 @@ export class GameEngine {
   private initializePlayerController(): void {
     console.log('[GameEngine] Initializing player controller...');
     
-    // Set camera at spawn position
+    // Set camera at spawn position looking down at terrain
     const startPosition = new THREE.Vector3(0, 25, 30);
     this.camera.position.copy(startPosition);
+    
+    // Point camera to look at the terrain origin
+    this.camera.lookAt(0, 0, 0);
     
     // Create player controller for WASD + mouse controls
     this.playerController = new PlayerController(this.camera, startPosition);
     
     console.log('[GameEngine] ✓ Player controller initialized - WASD + Mouse controls active');
+    console.log('[GameEngine] ✓ Camera looking at terrain origin (0, 0, 0)');
   }
   
   private async initializeWorldSystems(): Promise<void> {
@@ -278,6 +282,21 @@ export class GameEngine {
     // Link vegetation and grass to chunk manager
     chunkManager.setVegetationManager(vegetation);
     chunkManager.setGrassSystem(grass);
+    
+    // Add a simple ground plane as immediate visual reference
+    console.log('[GameEngine] Adding ground reference plane...');
+    const groundGeometry = new THREE.PlaneGeometry(1000, 1000);
+    const groundMaterial = new THREE.MeshStandardMaterial({ 
+      color: 0x3a5f3a, 
+      roughness: 0.8,
+      side: THREE.DoubleSide
+    });
+    const groundPlane = new THREE.Mesh(groundGeometry, groundMaterial);
+    groundPlane.rotation.x = -Math.PI / 2; // Rotate to be horizontal
+    groundPlane.position.y = -0.5; // Slightly below terrain tiles
+    groundPlane.receiveShadow = true;
+    this.scene.add(groundPlane);
+    console.log('[GameEngine] Ground plane added at y=-0.5');
     
     // Skybox - FIXED to load properly
     const skybox = new SkyboxManager(this.scene);
