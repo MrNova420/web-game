@@ -40,9 +40,45 @@ export class MinimapSystem {
   }
 
   /**
-   * Update and render minimap
+   * Update and render minimap - called by IntegrationManager with deltaTime
    */
-  update(
+  update(deltaTime?: number) {
+    // For now just render a simple minimap without entity data
+    // Will be enhanced later when entity systems provide data
+    
+    // Clear canvas
+    this.ctx.fillStyle = 'rgba(20, 20, 20, 0.9)';
+    this.ctx.fillRect(0, 0, this.mapSize, this.mapSize);
+
+    // Draw grid
+    this.drawGrid();
+
+    // Center map on player
+    const centerX = this.mapSize / 2;
+    const centerY = this.mapSize / 2;
+
+    // Draw player (always at center)
+    this.ctx.fillStyle = this.playerColor;
+    this.ctx.beginPath();
+    this.ctx.arc(centerX, centerY, 4, 0, Math.PI * 2);
+    this.ctx.fill();
+
+    // Draw player direction indicator
+    this.ctx.strokeStyle = this.playerColor;
+    this.ctx.lineWidth = 2;
+    this.ctx.beginPath();
+    this.ctx.moveTo(centerX, centerY);
+    this.ctx.lineTo(centerX, centerY - 10);
+    this.ctx.stroke();
+
+    // Draw compass
+    this.drawCompass();
+  }
+  
+  /**
+   * Update with full entity data - called manually when needed
+   */
+  updateWithEntities(
     playerPos: THREE.Vector3,
     entities: {
       enemies?: Array<{ position: THREE.Vector3 }>;

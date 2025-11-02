@@ -313,11 +313,9 @@ export class RealAssetTerrainGenerator {
    * Get height at position using noise
    */
   getHeight(x: number, z: number): number {
-    const biome = this.getBiomeAt(x, z);
-    const biomeModifier = this.biomeSystem.getBiomeHeightModifier(biome);
-    
+    // Calculate base height WITHOUT calling getBiomeAt to avoid infinite recursion
     let height = 0;
-    let amplitude = this.heightScale * biomeModifier;
+    let amplitude = this.heightScale;
     let frequency = 0.005;
 
     for (let i = 0; i < 4; i++) {
@@ -335,6 +333,7 @@ export class RealAssetTerrainGenerator {
   getBiomeAt(x: number, z: number): string {
     const temperature = this.noise(x * 0.001, z * 0.001);
     const moisture = this.noise(x * 0.001 + 1000, z * 0.001 + 1000);
+    // Use raw height calculation to avoid recursion
     const elevation = this.getHeight(x, z);
 
     if (elevation > 30) return 'mountain';
