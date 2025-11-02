@@ -283,21 +283,6 @@ export class GameEngine {
     chunkManager.setVegetationManager(vegetation);
     chunkManager.setGrassSystem(grass);
     
-    // Add a simple ground plane as immediate visual reference
-    console.log('[GameEngine] Adding ground reference plane...');
-    const groundGeometry = new THREE.PlaneGeometry(1000, 1000);
-    const groundMaterial = new THREE.MeshStandardMaterial({ 
-      color: 0x3a5f3a, 
-      roughness: 0.8,
-      side: THREE.DoubleSide
-    });
-    const groundPlane = new THREE.Mesh(groundGeometry, groundMaterial);
-    groundPlane.rotation.x = -Math.PI / 2; // Rotate to be horizontal
-    groundPlane.position.y = -0.5; // Slightly below terrain tiles
-    groundPlane.receiveShadow = true;
-    this.scene.add(groundPlane);
-    console.log('[GameEngine] Ground plane added at y=-0.5');
-    
     // Skybox - FIXED to load properly
     const skybox = new SkyboxManager(this.scene);
     this.integrationManager.registerSystem('skybox', skybox, []);
