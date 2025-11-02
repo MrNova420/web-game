@@ -2,33 +2,41 @@
 
 ## Quick Start - All Methods
 
-This game supports multiple deployment methods. Choose the one that fits your needs:
+This game features an optimized startup flow with instant menu display and background asset preloading. Choose the deployment method that fits your needs:
 
 ### Method 1: Local Development (Recommended for testing)
 ```bash
-# Install dependencies
-cd client && npm install
-cd ../server && npm install
+# Quick start using the launch script
+./launch-game.sh dev
 
-# Run development servers
-# Terminal 1 - Client
-cd client
-npm run dev
+# Or manually:
+# Terminal 1 - Server
+cd server && npm install && npm run dev
 
-# Terminal 2 - Server
-cd server
-npm run dev
+# Terminal 2 - Client (with menu and asset preloading)
+cd client && npm install && npm run dev
 ```
 
-### Method 2: Production Build + Static Hosting
+**What happens:**
+1. Menu appears instantly at http://localhost:3000
+2. Assets preload in background (trees, rocks, grass from extracted_assets/)
+3. User clicks "Play" when ready
+4. Game engine initializes and starts
+
+### Method 2: Production Build (Static Hosting)
 ```bash
-# Build client
+# Build client with optimized menu flow
 cd client
 npm install
 npm run build
 
+# Output in dist/ folder includes:
+# - Instant-loading menu system
+# - Optimized asset preloader
+# - Game engine bundle
+
 # Deploy dist/ folder to:
-# - Vercel
+# - Vercel (recommended)
 # - Netlify  
 # - GitHub Pages
 # - AWS S3 + CloudFront

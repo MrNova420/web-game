@@ -1,7 +1,7 @@
 # Quick Start Guide
-## Getting Started with Web Game Development
+## Getting Started with Fantasy Survival MMO
 
-This guide will help you get started with developing the Fantasy Survival MMO web game.
+This guide will help you get started with the Fantasy Survival MMO web game. The game now features an optimized startup flow with instant menu display and background asset preloading.
 
 ---
 
@@ -30,11 +30,50 @@ git clone https://github.com/MrNova420/web-game.git
 cd web-game
 ```
 
-### 2. Read the Documentation
+### 2. Quick Start with Launch Script (Recommended)
+```bash
+# Start in development mode (default)
+./launch-game.sh
+
+# Or specify mode explicitly
+./launch-game.sh dev     # Development mode
+./launch-game.sh prod    # Production mode
+./launch-game.sh test    # Run tests
+./launch-game.sh build   # Build for production
+./launch-game.sh status  # Check game status
+```
+
+The launch script will:
+- Check dependencies and install if needed
+- Setup asset symlinks automatically
+- Start both client and server
+- Display URLs and status
+
+### 3. Manual Start (Alternative)
+If you prefer to start services manually:
+
+**Client (Frontend with Menu):**
+```bash
+cd client
+npm install
+npm run dev
+# Opens at http://localhost:3000
+```
+
+**Server (Backend API):**
+```bash
+cd server
+npm install
+npm run dev
+# Runs at http://localhost:8080
+```
+
+### 4. Read the Documentation
 Before starting development, read through:
 - `DEVELOPMENT_ROADMAP.md` - Complete project roadmap
 - `TECHNICAL_GUIDE.md` - Technical architecture and implementation details
 - `PROGRESS_TRACKER.md` - Track your progress
+- `DEPLOYMENT_GUIDE.md` - Production deployment options
 
 ---
 
