@@ -11,7 +11,9 @@
     "lint:fix": "npx eslint src --ext .ts,.tsx --fix",
     "type-check": "npx tsc --noEmit",
     "dev": "npx vite",
-    "build": "npx vite build",
+    "build": "npm run copy-assets && npx vite build",
+    "build:no-assets": "npx vite build",
+    "copy-assets": "node scripts/copy-assets.js",
     "preview": "npx vite preview"
   },
   "keywords": [],

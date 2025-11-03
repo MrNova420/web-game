@@ -6,6 +6,20 @@
 ![Progress](https://img.shields.io/badge/progress-4%25-orange)
 ![Platform](https://img.shields.io/badge/platform-web-green)
 
+## 🌐 Deploy to Netlify (Play Online Now!)
+
+[![Deploy to Netlify](https://www.netlify.com/img/deploy/button.svg)](https://app.netlify.com/start/deploy?repository=https://github.com/MrNova420/web-game)
+
+**Click above to deploy and play online in 2-5 minutes!** 🎮
+
+After deployment:
+- ✅ Menu appears instantly
+- ✅ Assets preload in background
+- ✅ Click "Play" to start
+- ✅ Full game ready online
+
+**See:** [NETLIFY_DEPLOYMENT.md](NETLIFY_DEPLOYMENT.md) for complete deployment guide.
+
 ---
 
 ## 🎮 Project Vision
@@ -23,14 +37,22 @@ Build a massive, immersive multiplayer 3D open-world survival fantasy web game f
 
 ## 📚 Documentation
 
+**📖 COMPLETE DOCUMENTATION INDEX:**
+- **[DOCUMENTATION_INDEX.md](DOCUMENTATION_INDEX.md)** 📚 **ALL DOCS IN ONE PLACE** - Find any guide, tutorial, or reference
+
 **🤖 FOR AUTONOMOUS DEVELOPMENT:**
-- **[AUTONOMOUS_DEVELOPMENT_GUIDE.md](AUTONOMOUS_DEVELOPMENT_GUIDE.md)** ⭐ **MASTER REFERENCE** - Single source of truth for fully automated development with complete code examples, progress tracking, and step-by-step instructions
+- **[AUTONOMOUS_DEVELOPMENT_GUIDE.md](AUTONOMOUS_DEVELOPMENT_GUIDE.md)** ⭐ **MASTER REFERENCE** - Single source of truth for fully automated development
+
+**🎮 FOR GETTING STARTED:**
+- **[START_GUIDE.md](START_GUIDE.md)** 🚀 **COMPREHENSIVE START GUIDE** - All methods to start the game (dev, prod, Docker, etc.)
+- **[QUICK_START.md](QUICK_START.md)** - Quick developer setup
+- **[NETLIFY_DEPLOYMENT.md](NETLIFY_DEPLOYMENT.md)** 🌐 **DEPLOY TO NETLIFY** - Complete Netlify deployment guide
+- **[DEPLOYMENT_GUIDE.md](DEPLOYMENT_GUIDE.md)** - Production deployment options
 
 **Supporting Documentation:**
 - **[DEVELOPMENT_ROADMAP.md](DEVELOPMENT_ROADMAP.md)** - Complete project roadmap (12 phases, 40 weeks, 334 tasks)
 - **[PROGRESS_TRACKER.md](PROGRESS_TRACKER.md)** - Task tracking and progress metrics
 - **[TECHNICAL_GUIDE.md](TECHNICAL_GUIDE.md)** - Architecture and implementation details
-- **[QUICK_START.md](QUICK_START.md)** - Developer setup instructions
 - **[CONTRIBUTING.md](CONTRIBUTING.md)** - Code standards and best practices
 - **[PROJECT_OVERVIEW.md](PROJECT_OVERVIEW.md)** - High-level summary
 
@@ -43,26 +65,50 @@ Build a massive, immersive multiplayer 3D open-world survival fantasy web game f
 - npm or yarn
 - Modern web browser (Chrome, Firefox, Edge)
 
-### Get Started
+### Easiest Method: Launch Script
 ```bash
 # Clone the repository
 git clone https://github.com/MrNova420/web-game.git
 cd web-game
 
-# Start the client (in one terminal)
-cd client
+# Start everything automatically
+./launch-game.sh
+
+# Or specify mode
+./launch-game.sh dev     # Development (default)
+./launch-game.sh prod    # Production
+./launch-game.sh build   # Build only
+./launch-game.sh test    # Run tests
+```
+
+The game will start with:
+1. **Instant Menu Display** - Based on game-menu (2).html
+2. **Background Asset Preloading** - Critical assets load while you browse
+3. **User-Controlled Start** - Click "Play" when ready
+
+### Manual Method
+```bash
+# Start the server (in one terminal)
+cd server
 npm install
 npm run dev
 
-# Start the server (in another terminal)
-cd server
+# Start the client (in another terminal)
+cd client
 npm install
 npm run dev
 
 # Open browser to http://localhost:3000
 ```
 
-For autonomous development:
+### For More Start Options
+See **[START_GUIDE.md](START_GUIDE.md)** for comprehensive start methods including:
+- Docker deployment
+- Production builds
+- Environment variables
+- Troubleshooting
+
+### For Autonomous Development
 ```bash
 # Read the master guide for full autonomous development
 cat AUTONOMOUS_DEVELOPMENT_GUIDE.md

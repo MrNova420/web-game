@@ -1,0 +1,9 @@
+# Netlify Redirects
+# Fallback for Single Page Application routing
+/*    /index.html   200
+
+# API proxy (if backend is hosted elsewhere)
+/api/*  https://your-backend-server.com/api/:splat  200
+
+# Asset path handling
+/extracted_assets/*  /extracted_assets/:splat  200

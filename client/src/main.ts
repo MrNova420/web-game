@@ -2,16 +2,41 @@ import './style.css';
 import { GameEngine } from './core/GameEngine';
 import { LoadingManager } from './utils/LoadingManager';
 import { PerformanceOptimizer } from './utils/PerformanceOptimizer';
+import { AssetLoader } from './assets/AssetLoader';
+import { GameMenu } from './ui/GameMenu';
 
 /**
  * Main Entry Point - Fantasy Survival MMO
- * Initializes and starts the complete game with all 39 systems
- * With progressive loading and performance optimization
+ * Shows game menu first, preloads assets in background, starts game on user action
+ * Following AUTONOMOUS_DEVELOPMENT_GUIDE.md principles
  */
 
 async function main() {
   console.log('=================================================');
-  console.log('   FANTASY SURVIVAL MMO - OPTIMIZED LAUNCH');
+  console.log('   FANTASY SURVIVAL MMO');
+  console.log('=================================================');
+  
+  // Initialize asset loader for preloading
+  const assetLoader = new AssetLoader();
+  
+  // Create and show game menu (from game-menu (2).html)
+  const gameMenu = new GameMenu(assetLoader);
+  
+  // Show menu and start background asset preloading
+  await gameMenu.show(async () => {
+    // This function is called when user clicks "Play"
+    await startGame();
+  });
+  
+  console.log('[Main] Game menu displayed, assets preloading in background');
+}
+
+/**
+ * Start the actual game - called when user clicks Play button
+ */
+async function startGame() {
+  console.log('=================================================');
+  console.log('   STARTING GAME ENGINE');
   console.log('=================================================');
   
   // Create loading manager

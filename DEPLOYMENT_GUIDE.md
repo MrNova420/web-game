@@ -1,5 +1,23 @@
 # Production Deployment Checklist
 
+## Game Flow Architecture (v1.1.0)
+
+**New Optimized Startup Flow:**
+1. **Instant Menu Display** (< 100ms) - User sees game-menu (2).html design immediately
+2. **Background Asset Preloading** - 6 critical assets load while user browses menu
+3. **User-Controlled Start** - GameEngine initializes only when "Play" clicked
+4. **Loading Manager** - Shows progress during game system initialization
+5. **39 Game Systems** - All systems initialize in sequence
+6. **Game Ready** - User can play immediately
+
+**Critical Components:**
+- `client/src/ui/GameMenu.ts` - Menu manager with background preloading
+- `client/src/main.ts` - Orchestrates startup flow
+- `client/src/core/GameEngine.ts` - Main game engine (39 systems)
+- `client/src/assets/AssetLoader.ts` - Asset loading infrastructure
+
+---
+
 ## Pre-Deployment Checklist
 
 ### Code Quality ✓
@@ -9,6 +27,9 @@
 - [ ] All TODO/FIXME comments addressed
 - [ ] Code reviewed and approved
 - [ ] Git history clean (no sensitive data)
+- [ ] GameMenu.ts properly integrated
+- [ ] Asset preloading tested with real assets
+- [ ] Menu-to-game transition smooth
 
 ### Testing ✓
 - [ ] All unit tests passing
