@@ -62,6 +62,9 @@ export class GameEngine {
   // CONTROLS FIX: Add PlayerController
   private playerController: PlayerController | null = null;
   
+  // World systems for deferred chunk loading
+  private chunkManager: any = null;
+  
   // Game loop
   private isRunning: boolean = false;
   private isPaused: boolean = false;
@@ -282,10 +285,11 @@ export class GameEngine {
     chunkManager.setScene(this.scene);
     this.integrationManager.registerSystem('chunks', chunkManager, ['terrain', 'biomes']);
     
-    // IMPORTANT: Generate initial chunks around spawn (0, 0)
-    console.log('[GameEngine] Generating initial terrain chunks around spawn...');
-    await chunkManager.updateChunks(new THREE.Vector3(0, 0, 0), this.scene);
-    console.log('[GameEngine] Initial chunks generated!');
+    // PERFORMANCE FIX: Don't generate all chunks upfront - too slow!
+    // Start with just a small area and let chunks load dynamically
+    console.log('[GameEngine] Setting up dynamic chunk loading...');
+    // Store chunk manager for later use but don't block initialization
+    this.chunkManager = chunkManager;
     
     // Vegetation - pass asset loader and terrain generator  
     const vegetation = new VegetationManager(this.assetLoader, terrainGen);
@@ -455,6 +459,16 @@ export class GameEngine {
     this.isPaused = false;
     this.lastTime = performance.now();
     this.gameLoop();
+    
+    // PERFORMANCE FIX: Start loading terrain chunks progressively AFTER game starts
+    if (this.chunkManager && this.scene) {
+      console.log('[GameEngine] Starting progressive chunk loading in background...');
+      setTimeout(() => {
+        this.chunkManager.updateChunks(new THREE.Vector3(0, 0, 0), this.scene)
+          .then(() => console.log('[GameEngine] ✓ Initial terrain chunks loaded!'))
+          .catch((err: Error) => console.error('[GameEngine] ✗ Chunk loading failed:', err));
+      }, 100);  // Small delay to let game loop start first
+    }
     
     console.log('[GameEngine] ✓ Game loop started successfully!');
   }

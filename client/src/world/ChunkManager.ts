@@ -9,7 +9,7 @@ import { GrassSystem } from './GrassSystem';
  */
 export class ChunkManager {
   private chunks = new Map<string, THREE.Group>();
-  private renderDistance = 5;
+  private renderDistance = 2;  // PERFORMANCE FIX: Reduced from 5 to 2 (9x9 = 25 chunks instead of 121)
   private terrainGenerator: RealAssetTerrainGenerator;
   private vegetationManager: VegetationManager | null = null;
   private grassSystem: GrassSystem | null = null;
@@ -57,6 +57,8 @@ export class ChunkManager {
       this.lastLoggedChunk = { x: chunkX, z: chunkZ };
     }
 
+    // PERFORMANCE FIX: Generate chunks with small delays to avoid freezing
+    let chunksGenerated = 0;
     for (let x = -this.renderDistance; x <= this.renderDistance; x++) {
       for (let z = -this.renderDistance; z <= this.renderDistance; z++) {
         const cx = chunkX + x;
@@ -80,6 +82,12 @@ export class ChunkManager {
           // Add grass for this chunk
           if (this.grassSystem) {
             await this.grassSystem.populateChunk(cx, cz, scene);
+          }
+          
+          // PERFORMANCE FIX: Yield to browser every 3 chunks to prevent freezing
+          chunksGenerated++;
+          if (chunksGenerated % 3 === 0) {
+            await new Promise(resolve => setTimeout(resolve, 0));
           }
         }
       }
