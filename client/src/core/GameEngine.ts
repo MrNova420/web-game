@@ -90,7 +90,6 @@ export class GameEngine {
     
     // Initialize THREE.js with performance settings
     this.scene = new THREE.Scene();
-    this.scene.background = new THREE.Color(0x87CEEB); // Sky blue background
     this.scene.fog = new THREE.Fog(0x87CEEB, 10, settings.viewDistance);
     
     this.camera = new THREE.PerspectiveCamera(
@@ -148,15 +147,11 @@ export class GameEngine {
     canvas.style.position = 'fixed';
     canvas.style.top = '0';
     canvas.style.left = '0';
-    canvas.style.zIndex = '1';  // Below UI (z-index 100+) but above everything else
-    canvas.style.background = '#87CEEB'; // Sky blue backup
+    canvas.style.zIndex = '1';  // Below UI but above everything else
     
     document.body.appendChild(canvas);
     
     console.log('[GameEngine] Canvas appended to body with proper styling');
-    console.log('[GameEngine] Canvas z-index:', canvas.style.zIndex);
-    console.log('[GameEngine] Canvas visibility:', canvas.style.visibility);
-    console.log('[GameEngine] Canvas display:', canvas.style.display);
     
     // Handle window resize
     window.addEventListener('resize', () => {
@@ -248,16 +243,6 @@ export class GameEngine {
     // Create player controller for WASD + mouse controls
     this.playerController = new PlayerController(this.camera, startPosition);
     
-    // Add a test cube to verify rendering is working
-    console.log('[GameEngine] Adding test cube to verify rendering...');
-    const testGeometry = new THREE.BoxGeometry(5, 5, 5);
-    const testMaterial = new THREE.MeshStandardMaterial({ color: 0xff0000 });
-    const testCube = new THREE.Mesh(testGeometry, testMaterial);
-    testCube.position.set(0, 2.5, 0);
-    testCube.name = 'test_cube';
-    this.scene.add(testCube);
-    console.log('[GameEngine] Test cube added at origin (0, 2.5, 0)');
-    
     console.log('[GameEngine] ✓ Player controller initialized - WASD + Mouse controls active');
     console.log('[GameEngine] ✓ Camera looking at terrain origin (0, 0, 0)');
   }
@@ -281,11 +266,6 @@ export class GameEngine {
     const chunkManager = new ChunkManager(terrainGen);
     chunkManager.setScene(this.scene);
     this.integrationManager.registerSystem('chunks', chunkManager, ['terrain', 'biomes']);
-    
-    // IMPORTANT: Generate initial chunks around spawn (0, 0)
-    console.log('[GameEngine] Generating initial terrain chunks around spawn...');
-    await chunkManager.updateChunks(new THREE.Vector3(0, 0, 0), this.scene);
-    console.log('[GameEngine] Initial chunks generated!');
     
     // Vegetation - pass asset loader and terrain generator  
     const vegetation = new VegetationManager(this.assetLoader, terrainGen);
@@ -316,8 +296,6 @@ export class GameEngine {
     
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
     this.scene.add(ambientLight);
-    
-    console.log('[GameEngine] Lights added to scene');
     
     // Day/Night Cycle - pass lights and skybox
     const dayNight = new DayNightCycle(directionalLight, ambientLight, skybox);
@@ -446,17 +424,11 @@ export class GameEngine {
     console.log('[GameEngine] Starting game loop...');
     console.log('[GameEngine] Scene children count:', this.scene.children.length);
     console.log('[GameEngine] Scene children:', this.scene.children.map(c => c.type + (c.name ? ` (${c.name})` : '')));
-    console.log('[GameEngine] Camera position:', this.camera.position);
-    console.log('[GameEngine] Renderer size:', this.renderer.getSize(new THREE.Vector2()));
-    console.log('[GameEngine] Canvas element:', this.renderer.domElement);
-    console.log('[GameEngine] Canvas in DOM:', document.body.contains(this.renderer.domElement));
     
     this.isRunning = true;
     this.isPaused = false;
     this.lastTime = performance.now();
     this.gameLoop();
-    
-    console.log('[GameEngine] ✓ Game loop started successfully!');
   }
   
   /**
@@ -518,12 +490,6 @@ export class GameEngine {
    * Render the scene
    */
   private render(): void {
-    // Ensure renderer and scene are valid
-    if (!this.renderer || !this.scene || !this.camera) {
-      console.error('[GameEngine] Cannot render - missing renderer, scene, or camera');
-      return;
-    }
-    
     this.renderer.render(this.scene, this.camera);
   }
   

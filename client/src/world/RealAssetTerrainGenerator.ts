@@ -153,7 +153,6 @@ export class RealAssetTerrainGenerator {
     // Load each unique tile model ONCE
     for (const tilePath of allTilePaths) {
       try {
-        console.log(`[TerrainGenerator] Loading tile model: ${tilePath}`);
         const model = await this.assetLoader.loadModel(tilePath);
         
         // Extract geometry and material from model
@@ -179,14 +178,13 @@ export class RealAssetTerrainGenerator {
             instancedMesh.receiveShadow = true;
             instancedMesh.count = 0;  // Start at 0, will be incremented as tiles are placed
             instancedMesh.visible = true;  // Explicitly set visible
-            instancedMesh.frustumCulled = true;  // Enable frustum culling for performance
-            instancedMesh.name = `terrain_instanced_${tilePath.split('/').pop()}`;
+            instancedMesh.frustumCulled = false;  // Disable frustum culling temporarily for debugging
             
             scene.add(instancedMesh);
             this.instancedMeshes.set(tilePath, instancedMesh);
             this.instanceCounts.set(tilePath, 0);
             
-            console.log(`[TerrainGenerator] ✓ Created instanced mesh for ${tilePath.split('/').pop()} - added to scene`);
+            console.log(`[TerrainGenerator] Created instanced mesh for ${tilePath.split('/').pop()} - added to scene`);
           } else {
             // CPU MODE: Cache the model for cloning
             const cachedMesh = new THREE.Mesh(geometry, material);
@@ -195,18 +193,15 @@ export class RealAssetTerrainGenerator {
             this.cpuMeshCache.set(tilePath, cachedMesh);
           }
           
-          console.log(`[TerrainGenerator] ✓ Loaded ${this.useGPUInstancing ? '(GPU)' : '(CPU)'}: ${tilePath.split('/').pop()}`);
-        } else {
-          console.error(`[TerrainGenerator] ✗ Failed to extract geometry/material from ${tilePath}`);
+          console.log(`[TerrainGenerator] Loaded ${this.useGPUInstancing ? '(GPU)' : '(CPU)'}: ${tilePath.split('/').pop()}`);
         }
       } catch (error) {
-        console.error(`[TerrainGenerator] ✗ Failed to load tile: ${tilePath}`, error);
+        console.warn(`[TerrainGenerator] Failed to load tile: ${tilePath}`, error);
       }
     }
     
-    console.log(`[TerrainGenerator] ✓ Pre-loaded ${allTilePaths.size} unique tile models (${this.useGPUInstancing ? 'GPU instancing' : 'CPU rendering'})`);
-    console.log(`[TerrainGenerator] Scene now has ${scene.children.length} children`);
-    console.log(`[TerrainGenerator] Instanced meshes in scene:`, Array.from(this.instancedMeshes.keys()).map(k => k.split('/').pop()));
+    console.log(`[TerrainGenerator] Pre-loaded ${allTilePaths.size} unique tile models (${this.useGPUInstancing ? 'GPU instancing' : 'CPU rendering'})`);
+  }
 
   /**
    * Generate terrain chunk using INSTANCED tile models (GPU) or cloned meshes (CPU)
