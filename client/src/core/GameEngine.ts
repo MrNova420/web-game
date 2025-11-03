@@ -248,6 +248,16 @@ export class GameEngine {
     // Create player controller for WASD + mouse controls
     this.playerController = new PlayerController(this.camera, startPosition);
     
+    // Add a test cube to verify rendering is working
+    console.log('[GameEngine] Adding test cube to verify rendering...');
+    const testGeometry = new THREE.BoxGeometry(5, 5, 5);
+    const testMaterial = new THREE.MeshStandardMaterial({ color: 0xff0000 });
+    const testCube = new THREE.Mesh(testGeometry, testMaterial);
+    testCube.position.set(0, 2.5, 0);
+    testCube.name = 'test_cube';
+    this.scene.add(testCube);
+    console.log('[GameEngine] Test cube added at origin (0, 2.5, 0)');
+    
     console.log('[GameEngine] ✓ Player controller initialized - WASD + Mouse controls active');
     console.log('[GameEngine] ✓ Camera looking at terrain origin (0, 0, 0)');
   }
@@ -271,6 +281,11 @@ export class GameEngine {
     const chunkManager = new ChunkManager(terrainGen);
     chunkManager.setScene(this.scene);
     this.integrationManager.registerSystem('chunks', chunkManager, ['terrain', 'biomes']);
+    
+    // IMPORTANT: Generate initial chunks around spawn (0, 0)
+    console.log('[GameEngine] Generating initial terrain chunks around spawn...');
+    await chunkManager.updateChunks(new THREE.Vector3(0, 0, 0), this.scene);
+    console.log('[GameEngine] Initial chunks generated!');
     
     // Vegetation - pass asset loader and terrain generator  
     const vegetation = new VegetationManager(this.assetLoader, terrainGen);
@@ -301,6 +316,8 @@ export class GameEngine {
     
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
     this.scene.add(ambientLight);
+    
+    console.log('[GameEngine] Lights added to scene');
     
     // Day/Night Cycle - pass lights and skybox
     const dayNight = new DayNightCycle(directionalLight, ambientLight, skybox);
