@@ -1,8 +1,30 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
+import path from 'path';
+import fs from 'fs';
 
 export default defineConfig({
-  plugins: [react()],
+  plugins: [
+    react(),
+    {
+      name: 'serve-user-menu',
+      configureServer(server) {
+        server.middlewares.use('/game-menu%20(2).html', (req, res) => {
+          const menuPath = path.resolve(__dirname, '../game-menu (2).html');
+          const content = fs.readFileSync(menuPath, 'utf-8');
+          res.setHeader('Content-Type', 'text/html');
+          res.end(content);
+        });
+      },
+      closeBundle() {
+        // Copy user's menu file to dist for production builds
+        const srcPath = path.resolve(__dirname, '../game-menu (2).html');
+        const destPath = path.resolve(__dirname, 'dist/game-menu (2).html');
+        fs.copyFileSync(srcPath, destPath);
+        console.log('✓ Copied user menu file to dist');
+      }
+    }
+  ],
   server: {
     port: 3000,
     proxy: {

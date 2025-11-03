@@ -164,6 +164,9 @@
                 <button class="menu-button" id="credits-btn">Credits</button>
                 <button class="menu-button" id="exit-btn">Exit</button>
             </div>
+            <div id="loading-status" style="margin-top: 20px; font-size: 14px; color: #8899ff; display: none;">
+                Loading assets...
+            </div>
         </div>
     </div>
 
@@ -283,6 +286,60 @@
                 e.preventDefault();
                 menuButtons[currentButtonIndex].click();
             }
+        });
+
+        // =============================================================
+        // ASSET PRELOADING & GAME ENGINE CONNECTION
+        // =============================================================
+        
+        let assetsLoaded = false;
+        const loadingStatus = document.getElementById('loading-status');
+        
+        // Show loading indicator
+        loadingStatus.style.display = 'block';
+        
+        // Preload critical assets in background
+        async function preloadAssets() {
+            const assetsToPreload = [
+                '/extracted_assets/Stylized_Nature_MegaKit/Exports/OBJ/CommonTree_1.obj',
+                '/extracted_assets/Stylized_Nature_MegaKit/Exports/OBJ/CommonTree_2.obj',
+                '/extracted_assets/Stylized_Nature_MegaKit/Exports/OBJ/PineTree_1.obj',
+                '/extracted_assets/Stylized_Nature_MegaKit/Exports/OBJ/Rock_1.obj',
+                '/extracted_assets/Stylized_Nature_MegaKit/Exports/OBJ/Rock_2.obj',
+                '/extracted_assets/Stylized_Nature_MegaKit/Exports/OBJ/Grass_1.obj'
+            ];
+            
+            let loaded = 0;
+            for (const assetPath of assetsToPreload) {
+                try {
+                    await fetch(assetPath, { method: 'HEAD' });
+                    loaded++;
+                    loadingStatus.textContent = `Loading assets... ${loaded}/${assetsToPreload.length}`;
+                } catch (err) {
+                    console.log('Asset preload:', assetPath, err.message);
+                }
+            }
+            
+            assetsLoaded = true;
+            loadingStatus.textContent = '✓ Ready to play!';
+            loadingStatus.style.color = '#44ff44';
+        }
+        
+        // Start preloading immediately
+        preloadAssets();
+        
+        // Connect Play button to start game
+        document.getElementById('play-btn').addEventListener('click', function() {
+            // Notify parent window/game engine to start
+            if (window.parent && window.parent !== window) {
+                window.parent.postMessage({ type: 'START_GAME' }, '*');
+            }
+            
+            // Hide menu, show game
+            document.getElementById('game-menu').style.display = 'none';
+            
+            // Dispatch custom event for game engine
+            window.dispatchEvent(new CustomEvent('gameMenuStartClicked'));
         });
     </script>
 </body>
