@@ -63,7 +63,7 @@ export class GameEngine {
   private playerController: PlayerController | null = null;
   
   // World systems for deferred chunk loading
-  private chunkManager: any = null;
+  private chunkManager: ChunkManager | null = null;
   
   // Game loop
   private isRunning: boolean = false;
