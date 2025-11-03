@@ -61,37 +61,90 @@ export class PlayerController {
   }
   
   private createVirtualJoystick() {
-    // Create joystick container
+    // Create joystick container - matching menu theme
     const joystickContainer = document.createElement('div');
     joystickContainer.style.cssText = `
       position: fixed;
-      bottom: 80px;
-      left: 80px;
-      width: 120px;
-      height: 120px;
-      background: rgba(255, 255, 255, 0.3);
-      border: 3px solid rgba(255, 255, 255, 0.5);
+      bottom: 100px;
+      left: 100px;
+      width: 140px;
+      height: 140px;
+      background: radial-gradient(circle, rgba(45, 74, 110, 0.6), rgba(26, 43, 74, 0.8));
+      border: 3px solid rgba(0, 255, 255, 0.6);
       border-radius: 50%;
       z-index: 1000;
       touch-action: none;
+      box-shadow: 0 0 30px rgba(0, 255, 255, 0.4), inset 0 0 20px rgba(0, 255, 255, 0.2);
     `;
     
-    // Create joystick stick
+    // Create outer ring indicator
+    const outerRing = document.createElement('div');
+    outerRing.style.cssText = `
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 90%;
+      height: 90%;
+      border: 2px dashed rgba(0, 255, 255, 0.3);
+      border-radius: 50%;
+      pointer-events: none;
+    `;
+    joystickContainer.appendChild(outerRing);
+    
+    // Create joystick stick - themed
     this.joystickElement = document.createElement('div');
     this.joystickElement.style.cssText = `
       position: absolute;
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
-      width: 50px;
-      height: 50px;
-      background: rgba(255, 255, 255, 0.8);
+      width: 60px;
+      height: 60px;
+      background: linear-gradient(135deg, rgba(0, 255, 255, 0.9), rgba(0, 200, 255, 0.95));
+      border: 3px solid rgba(255, 255, 255, 0.8);
       border-radius: 50%;
       transition: all 0.1s;
+      box-shadow: 0 0 20px rgba(0, 255, 255, 0.6), inset 0 2px 5px rgba(255, 255, 255, 0.3);
+      pointer-events: none;
     `;
+    
+    // Add direction indicator
+    const directionIndicator = document.createElement('div');
+    directionIndicator.style.cssText = `
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      color: rgba(0, 0, 0, 0.7);
+      font-weight: bold;
+      font-size: 20px;
+      pointer-events: none;
+    `;
+    directionIndicator.textContent = '⊕';
+    this.joystickElement.appendChild(directionIndicator);
     
     joystickContainer.appendChild(this.joystickElement);
     document.body.appendChild(joystickContainer);
+    
+    // Add label
+    const label = document.createElement('div');
+    label.style.cssText = `
+      position: fixed;
+      bottom: 60px;
+      left: 50%;
+      transform: translateX(-50%);
+      color: rgba(0, 255, 255, 0.8);
+      font-weight: bold;
+      font-size: 12px;
+      text-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
+      pointer-events: none;
+      z-index: 999;
+      font-family: Arial, sans-serif;
+      letter-spacing: 1px;
+    `;
+    label.textContent = 'MOVE';
+    joystickContainer.appendChild(label);
     
     // Joystick touch handlers
     joystickContainer.addEventListener('touchstart', (e) => {
@@ -99,6 +152,7 @@ export class PlayerController {
       const touch = e.touches[0];
       this.moveTouchId = touch.identifier;
       this.handleJoystickMove(touch, joystickContainer);
+      joystickContainer.style.boxShadow = '0 0 40px rgba(0, 255, 255, 0.8), inset 0 0 30px rgba(0, 255, 255, 0.4)';
     }, { passive: false });
     
     joystickContainer.addEventListener('touchmove', (e) => {
@@ -120,7 +174,119 @@ export class PlayerController {
       if (this.joystickElement) {
         this.joystickElement.style.transform = 'translate(-50%, -50%)';
       }
+      joystickContainer.style.boxShadow = '0 0 30px rgba(0, 255, 255, 0.4), inset 0 0 20px rgba(0, 255, 255, 0.2)';
     }, { passive: false });
+    
+    // Add action buttons (jump, interact)
+    this.createActionButtons();
+  }
+  
+  /**
+   * Create action buttons for mobile (jump, interact, etc.)
+   */
+  private createActionButtons() {
+    // Jump button
+    const jumpButton = document.createElement('button');
+    jumpButton.style.cssText = `
+      position: fixed;
+      bottom: 180px;
+      right: 100px;
+      width: 80px;
+      height: 80px;
+      background: linear-gradient(135deg, rgba(45, 74, 110, 0.9), rgba(26, 43, 74, 0.95));
+      border: 3px solid rgba(0, 255, 255, 0.6);
+      border-radius: 50%;
+      color: rgba(0, 255, 255, 0.9);
+      font-size: 32px;
+      font-weight: bold;
+      z-index: 1000;
+      touch-action: none;
+      box-shadow: 0 0 20px rgba(0, 255, 255, 0.4);
+      cursor: pointer;
+      transition: all 0.2s;
+    `;
+    jumpButton.textContent = '⬆';
+    jumpButton.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      this.isJumping = true;
+      jumpButton.style.transform = 'scale(0.9)';
+      jumpButton.style.boxShadow = '0 0 30px rgba(0, 255, 255, 0.8)';
+    });
+    jumpButton.addEventListener('touchend', (e) => {
+      e.preventDefault();
+      this.isJumping = false;
+      jumpButton.style.transform = 'scale(1)';
+      jumpButton.style.boxShadow = '0 0 20px rgba(0, 255, 255, 0.4)';
+    });
+    document.body.appendChild(jumpButton);
+
+    // Interact button
+    const interactButton = document.createElement('button');
+    interactButton.style.cssText = `
+      position: fixed;
+      bottom: 100px;
+      right: 100px;
+      width: 80px;
+      height: 80px;
+      background: linear-gradient(135deg, rgba(45, 74, 110, 0.9), rgba(26, 43, 74, 0.95));
+      border: 3px solid rgba(255, 215, 0, 0.6);
+      border-radius: 50%;
+      color: rgba(255, 215, 0, 0.9);
+      font-size: 28px;
+      font-weight: bold;
+      z-index: 1000;
+      touch-action: none;
+      box-shadow: 0 0 20px rgba(255, 215, 0, 0.4);
+      cursor: pointer;
+      transition: all 0.2s;
+    `;
+    interactButton.textContent = '🤝';
+    interactButton.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      interactButton.style.transform = 'scale(0.9)';
+      interactButton.style.boxShadow = '0 0 30px rgba(255, 215, 0, 0.8)';
+      console.log('[Mobile] Interact action');
+    });
+    interactButton.addEventListener('touchend', (e) => {
+      e.preventDefault();
+      interactButton.style.transform = 'scale(1)';
+      interactButton.style.boxShadow = '0 0 20px rgba(255, 215, 0, 0.4)';
+    });
+    document.body.appendChild(interactButton);
+
+    // Attack button
+    const attackButton = document.createElement('button');
+    attackButton.style.cssText = `
+      position: fixed;
+      bottom: 100px;
+      right: 200px;
+      width: 70px;
+      height: 70px;
+      background: linear-gradient(135deg, rgba(255, 0, 0, 0.7), rgba(200, 0, 0, 0.85));
+      border: 3px solid rgba(255, 100, 100, 0.6);
+      border-radius: 50%;
+      color: white;
+      font-size: 28px;
+      font-weight: bold;
+      z-index: 1000;
+      touch-action: none;
+      box-shadow: 0 0 20px rgba(255, 0, 0, 0.4);
+      cursor: pointer;
+      transition: all 0.2s;
+    `;
+    attackButton.textContent = '⚔️';
+    attackButton.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      attackButton.style.transform = 'scale(0.9)';
+      attackButton.style.boxShadow = '0 0 30px rgba(255, 0, 0, 0.8)';
+      console.log('[Mobile] Attack action');
+    });
+    attackButton.addEventListener('touchend', (e) => {
+      e.preventDefault();
+      attackButton.style.transform = 'scale(1)';
+      attackButton.style.boxShadow = '0 0 20px rgba(255, 0, 0, 0.4)';
+    });
+    document.body.appendChild(attackButton);
   }
   
   private handleJoystickMove(touch: Touch, container: HTMLElement) {

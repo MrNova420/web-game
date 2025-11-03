@@ -1,5 +1,5 @@
 /**
- * GameMenu - Loads user's game-menu (2).html which handles everything internally
+ * GameMenu - Loads user's game-menu.html which handles everything internally
  * The HTML file has: visuals, asset preloading, and game start functionality
  */
 
@@ -27,11 +27,11 @@ export class GameMenu {
   }
 
   /**
-   * Load the user's game-menu (2).html file
+   * Load the user's game-menu.html file
    */
   private async loadUserMenu(): Promise<void> {
     try {
-      const response = await fetch('/game-menu%20(2).html');
+      const response = await fetch('/game-menu.html');
       const htmlText = await response.text();
       
       // Parse the HTML

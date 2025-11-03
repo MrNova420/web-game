@@ -9,8 +9,8 @@ export default defineConfig({
     {
       name: 'serve-user-menu',
       configureServer(server) {
-        server.middlewares.use('/game-menu%20(2).html', (req, res) => {
-          const menuPath = path.resolve(__dirname, '../game-menu (2).html');
+        server.middlewares.use('/game-menu.html', (req, res) => {
+          const menuPath = path.resolve(__dirname, 'public/game-menu.html');
           const content = fs.readFileSync(menuPath, 'utf-8');
           res.setHeader('Content-Type', 'text/html');
           res.end(content);
@@ -18,10 +18,17 @@ export default defineConfig({
       },
       closeBundle() {
         // Copy user's menu file to dist for production builds
-        const srcPath = path.resolve(__dirname, '../game-menu (2).html');
-        const destPath = path.resolve(__dirname, 'dist/game-menu (2).html');
-        fs.copyFileSync(srcPath, destPath);
-        console.log('✓ Copied user menu file to dist');
+        const srcPath = path.resolve(__dirname, 'public/game-menu.html');
+        const destPath = path.resolve(__dirname, 'dist/game-menu.html');
+        if (fs.existsSync(srcPath)) {
+          // Ensure dist directory exists
+          const distDir = path.dirname(destPath);
+          if (!fs.existsSync(distDir)) {
+            fs.mkdirSync(distDir, { recursive: true });
+          }
+          fs.copyFileSync(srcPath, destPath);
+          console.log('✓ Copied user menu file to dist');
+        }
       }
     }
   ],

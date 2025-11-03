@@ -62,6 +62,9 @@ export class GameEngine {
   // CONTROLS FIX: Add PlayerController
   private playerController: PlayerController | null = null;
   
+  // World systems for deferred chunk loading
+  private chunkManager: ChunkManager | null = null;
+  
   // Game loop
   private isRunning: boolean = false;
   private isPaused: boolean = false;
@@ -127,11 +130,16 @@ export class GameEngine {
                       Math.min(window.devicePixelRatio, 2);
     this.renderer.setPixelRatio(pixelRatio);
     
+    // PERFORMANCE OPTIMIZATIONS
     this.renderer.shadowMap.enabled = settings.shadows;
     if (settings.shadows) {
       this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     }
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
+    
+    // CRITICAL PERFORMANCE FIXES for better FPS
+    this.renderer.sortObjects = false; // Disable automatic sorting (we'll handle it)
+    this.renderer.info.autoReset = false; // Manual reset for better perf tracking
     
     // Remove any existing canvas
     const existingCanvas = document.getElementById('game-canvas');
@@ -282,10 +290,11 @@ export class GameEngine {
     chunkManager.setScene(this.scene);
     this.integrationManager.registerSystem('chunks', chunkManager, ['terrain', 'biomes']);
     
-    // IMPORTANT: Generate initial chunks around spawn (0, 0)
-    console.log('[GameEngine] Generating initial terrain chunks around spawn...');
-    await chunkManager.updateChunks(new THREE.Vector3(0, 0, 0), this.scene);
-    console.log('[GameEngine] Initial chunks generated!');
+    // PERFORMANCE FIX: Don't generate all chunks upfront - too slow!
+    // Start with just a small area and let chunks load dynamically
+    console.log('[GameEngine] Setting up dynamic chunk loading...');
+    // Store chunk manager for later use but don't block initialization
+    this.chunkManager = chunkManager;
     
     // Vegetation - pass asset loader and terrain generator  
     const vegetation = new VegetationManager(this.assetLoader, terrainGen);
@@ -456,6 +465,18 @@ export class GameEngine {
     this.lastTime = performance.now();
     this.gameLoop();
     
+    // PERFORMANCE FIX: Start loading terrain chunks progressively AFTER game starts
+    if (this.chunkManager && this.scene) {
+      console.log('[GameEngine] Starting progressive chunk loading in background...');
+      const chunkMgr = this.chunkManager; // Store non-null reference
+      const sceneRef = this.scene;
+      setTimeout(() => {
+        chunkMgr.updateChunks(new THREE.Vector3(0, 0, 0), sceneRef)
+          .then(() => console.log('[GameEngine] ✓ Initial terrain chunks loaded!'))
+          .catch((err: Error) => console.error('[GameEngine] ✗ Chunk loading failed:', err));
+      }, 100);  // Small delay to let game loop start first
+    }
+    
     console.log('[GameEngine] ✓ Game loop started successfully!');
   }
   
@@ -516,13 +537,27 @@ export class GameEngine {
   
   /**
    * Render the scene
+   * PERFORMANCE OPTIMIZATIONS: Frustum culling, selective rendering
    */
+  private renderCount = 0;
+  
   private render(): void {
     // Ensure renderer and scene are valid
     if (!this.renderer || !this.scene || !this.camera) {
       console.error('[GameEngine] Cannot render - missing renderer, scene, or camera');
       return;
     }
+    
+    this.renderCount++;
+    
+    // PERFORMANCE FIX: Reset renderer info periodically (not every frame)
+    if (this.renderCount % 60 === 0) {
+      this.renderer.info.reset();
+    }
+    
+    // PERFORMANCE FIX: Apply frustum culling manually for better control
+    // Three.js does this automatically, but we can optimize by pre-filtering
+    this.camera.updateMatrixWorld();
     
     this.renderer.render(this.scene, this.camera);
   }

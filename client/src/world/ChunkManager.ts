@@ -9,7 +9,7 @@ import { GrassSystem } from './GrassSystem';
  */
 export class ChunkManager {
   private chunks = new Map<string, THREE.Group>();
-  private renderDistance = 5;
+  private renderDistance = 2;  // PERFORMANCE FIX: Reduced from 5 to 2 (9x9 = 25 chunks instead of 121)
   private terrainGenerator: RealAssetTerrainGenerator;
   private vegetationManager: VegetationManager | null = null;
   private grassSystem: GrassSystem | null = null;
@@ -37,9 +37,23 @@ export class ChunkManager {
   }
 
   // Standard update method for IntegrationManager
+  // PERFORMANCE FIX: Only update chunks when player moves significantly (not every frame!)
+  private lastUpdatePosition: THREE.Vector3 = new THREE.Vector3(999999, 0, 999999);
+  private updateThreshold = 32; // Update when player moves 32 units (half a chunk)
+  
   update(deltaTime: number) {
-    if (this.scene) {
-      this.updateChunks(this.playerPosition, this.scene);
+    if (!this.scene) return;
+    
+    // CRITICAL PERFORMANCE FIX: Don't run updateChunks every frame!
+    // Only update when player has moved significantly
+    const distanceMoved = this.playerPosition.distanceTo(this.lastUpdatePosition);
+    
+    if (distanceMoved > this.updateThreshold) {
+      this.lastUpdatePosition.copy(this.playerPosition);
+      // Fire and forget - don't await to prevent blocking
+      this.updateChunks(this.playerPosition, this.scene).catch(err => 
+        console.error('[ChunkManager] Chunk update error:', err)
+      );
     }
   }
 
@@ -57,6 +71,8 @@ export class ChunkManager {
       this.lastLoggedChunk = { x: chunkX, z: chunkZ };
     }
 
+    // PERFORMANCE FIX: Generate chunks with small delays to avoid freezing
+    let chunksGenerated = 0;
     for (let x = -this.renderDistance; x <= this.renderDistance; x++) {
       for (let z = -this.renderDistance; z <= this.renderDistance; z++) {
         const cx = chunkX + x;
@@ -80,6 +96,12 @@ export class ChunkManager {
           // Add grass for this chunk
           if (this.grassSystem) {
             await this.grassSystem.populateChunk(cx, cz, scene);
+          }
+          
+          // PERFORMANCE FIX: Yield to browser every 3 chunks to prevent freezing
+          chunksGenerated++;
+          if (chunksGenerated % 3 === 0) {
+            await new Promise(resolve => setTimeout(resolve, 0));
           }
         }
       }
