@@ -86,16 +86,16 @@ async function startGame() {
     });
     
     loadingManager.updateProgress(90, 'Starting game...');
-    await new Promise(resolve => setTimeout(resolve, 100));
+    // Removed setTimeout to prevent any potential blocking
     
-    // Start game loop
+    // Start game loop immediately
     console.log('[Main] Starting optimized game loop...');
     engine.start();
     
     loadingManager.updateProgress(95, 'Preparing user interface...');
-    await new Promise(resolve => setTimeout(resolve, 100));
+    // Removed setTimeout to prevent any potential blocking
     
-    // Complete loading
+    // Complete loading immediately
     loadingManager.complete();
     
     console.log('\n=================================================');
