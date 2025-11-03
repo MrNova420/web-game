@@ -222,7 +222,7 @@
 <body>
     <div id="game-menu">
         <!-- Background video that plays on Play button click -->
-        <video id="menu-video" preload="auto" muted playsinline style="pointer-events: none;">
+        <video id="menu-video" preload="metadata" muted playsinline style="pointer-events: none;" poster="">
             <source src="mainmenubackgroundvideo.mp4" type="video/mp4">
         </video>
         <div class="menu-container">
@@ -241,6 +241,21 @@
     </div>
 
     <script>
+        // Initialize video to show first frame immediately
+        const menuVideo = document.getElementById('menu-video');
+        
+        // Load video metadata to get first frame
+        menuVideo.addEventListener('loadedmetadata', function() {
+            // Seek to first frame and pause to show it as static image
+            menuVideo.currentTime = 0;
+            menuVideo.pause();
+            console.log('Video first frame loaded and displayed');
+        });
+        
+        // Ensure video loads and shows first frame on page load
+        menuVideo.load();
+        menuVideo.currentTime = 0;
+        
         // Better fullscreen functionality that works on mobile
         function enterFullscreen() {
             const elem = document.documentElement;
@@ -420,6 +435,9 @@
             const menuContainer = document.querySelector('.menu-container');
             menuContainer.style.transition = 'opacity 0.5s';
             menuContainer.style.opacity = '0';
+            
+            // Reset video to beginning before playing
+            video.currentTime = 0;
             
             // Ensure video is high quality
             video.setAttribute('preload', 'auto');
