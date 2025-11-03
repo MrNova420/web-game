@@ -207,6 +207,7 @@ export class RealAssetTerrainGenerator {
     console.log(`[TerrainGenerator] ✓ Pre-loaded ${allTilePaths.size} unique tile models (${this.useGPUInstancing ? 'GPU instancing' : 'CPU rendering'})`);
     console.log(`[TerrainGenerator] Scene now has ${scene.children.length} children`);
     console.log(`[TerrainGenerator] Instanced meshes in scene:`, Array.from(this.instancedMeshes.keys()).map(k => k.split('/').pop()));
+  }
 
   /**
    * Generate terrain chunk using INSTANCED tile models (GPU) or cloned meshes (CPU)

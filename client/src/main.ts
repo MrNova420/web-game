@@ -19,7 +19,7 @@ async function main() {
   // Initialize asset loader for preloading
   const assetLoader = new AssetLoader();
   
-  // Create and show game menu (from game-menu (2).html)
+  // Create and show game menu (from game-menu.html)
   const gameMenu = new GameMenu(assetLoader);
   
   // Show menu and start background asset preloading
