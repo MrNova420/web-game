@@ -41,11 +41,60 @@
             right: 0;
             bottom: 0;
             background: radial-gradient(ellipse at center, transparent 0%, rgba(0,0,0,0.4) 100%);
+            z-index: 2;
+        }
+        
+        /* Mobile-specific fixes for full viewport */
+        @supports (-webkit-touch-callout: none) {
+            /* iOS Safari */
+            body {
+                height: -webkit-fill-available;
+            }
+            
+            #game-menu {
+                height: -webkit-fill-available;
+                min-height: -webkit-fill-available;
+            }
+            
+            #menu-video {
+                height: -webkit-fill-available;
+                min-height: 100vh;
+            }
+        }
+        
+        /* Android and general mobile */
+        @media screen and (max-width: 768px) {
+            html {
+                height: 100%;
+                overflow: hidden;
+            }
+            
+            body {
+                position: fixed;
+                width: 100%;
+                height: 100%;
+                overflow: hidden;
+            }
+            
+            #game-menu {
+                position: fixed;
+                width: 100vw;
+                height: 100vh;
+                min-height: 100vh;
+                min-height: -webkit-fill-available;
+                overflow: hidden;
+            }
+            
+            #menu-video {
+                min-height: 100vh;
+                min-height: -webkit-fill-available;
+                object-position: center center;
+            }
         }
 
         .menu-container {
             position: relative;
-            z-index: 10;
+            z-index: 100;
             text-align: center;
             padding: 20px;
         }
@@ -155,6 +204,10 @@
 </head>
 <body>
     <div id="game-menu">
+        <!-- Background video that plays on Play button click -->
+        <video id="menu-video" preload="auto" muted playsinline>
+            <source src="mainmenubackgroundvideo.mp4" type="video/mp4">
+        </video>
         <div class="menu-container">
             <h1 class="game-title">YOUR GAME</h1>
             <div class="menu-buttons">
@@ -171,57 +224,68 @@
     </div>
 
     <script>
-        // Auto-fullscreen functionality
+        // Better fullscreen functionality that works on mobile
         function enterFullscreen() {
             const elem = document.documentElement;
-            if (elem.requestFullscreen) {
-                elem.requestFullscreen().catch(err => {
+            
+            // Use the most compatible method for the browser
+            const requestFullscreen = elem.requestFullscreen || 
+                                     elem.webkitRequestFullscreen || 
+                                     elem.mozRequestFullScreen || 
+                                     elem.msRequestFullscreen;
+            
+            if (requestFullscreen) {
+                requestFullscreen.call(elem).catch(err => {
                     console.log('Fullscreen request failed:', err);
                 });
-            } else if (elem.webkitRequestFullscreen) {
-                elem.webkitRequestFullscreen();
-            } else if (elem.msRequestFullscreen) {
-                elem.msRequestFullscreen();
-            } else if (elem.mozRequestFullScreen) {
-                elem.mozRequestFullScreen();
+            }
+            
+            // Additional mobile-specific fixes
+            if (window.innerHeight !== screen.height) {
+                // Mobile browser with address bar - try to hide it
+                window.scrollTo(0, 1);
+                document.body.scrollTop = 1;
             }
         }
 
-        // Attempt to enter fullscreen on page load
+        // Attempt to enter fullscreen immediately
+        // Note: Most browsers require user interaction first
+        let fullscreenAttempted = false;
+        
+        // Try on page load (will likely fail but worth trying)
         window.addEventListener('load', function() {
-            // Try immediately
-            enterFullscreen();
-            
-            // Also try after a short delay
             setTimeout(enterFullscreen, 100);
-            setTimeout(enterFullscreen, 500);
-            setTimeout(enterFullscreen, 1000);
         });
 
-        // Enter fullscreen on any user interaction if not already fullscreen
-        function tryFullscreen() {
-            if (!document.fullscreenElement && 
-                !document.webkitFullscreenElement && 
-                !document.mozFullScreenElement && 
-                !document.msFullscreenElement) {
+        // Enter fullscreen on FIRST user interaction
+        function tryFullscreenOnce(e) {
+            if (!fullscreenAttempted) {
+                fullscreenAttempted = true;
                 enterFullscreen();
+                
+                // Also lock orientation on mobile if supported
+                if (screen.orientation && screen.orientation.lock) {
+                    screen.orientation.lock('landscape').catch(() => {
+                        console.log('Orientation lock not supported');
+                    });
+                }
             }
         }
 
-        // Try fullscreen on any interaction
-        document.addEventListener('click', tryFullscreen, { once: true });
-        document.addEventListener('touchstart', tryFullscreen, { once: true });
-        document.addEventListener('keydown', tryFullscreen, { once: true });
+        // Listen for first interaction
+        document.addEventListener('click', tryFullscreenOnce, { once: true });
+        document.addEventListener('touchstart', tryFullscreenOnce, { once: true });
+        document.addEventListener('touchend', tryFullscreenOnce, { once: true });
 
-        // Re-enter fullscreen if user exits
+        // Re-enter fullscreen if user exits (not on first interaction)
         document.addEventListener('fullscreenchange', function() {
-            if (!document.fullscreenElement) {
+            if (!document.fullscreenElement && fullscreenAttempted) {
                 setTimeout(enterFullscreen, 100);
             }
         });
 
         document.addEventListener('webkitfullscreenchange', function() {
-            if (!document.webkitFullscreenElement) {
+            if (!document.webkitFullscreenElement && fullscreenAttempted) {
                 setTimeout(enterFullscreen, 100);
             }
         });
@@ -330,6 +394,36 @@
         
         // Connect Play button to start game
         document.getElementById('play-btn').addEventListener('click', function() {
+            console.log('Play button clicked - starting video animation');
+            
+            // Get the video element
+            const video = document.getElementById('menu-video');
+            
+            // Hide menu buttons to show video animation
+            const menuContainer = document.querySelector('.menu-container');
+            menuContainer.style.transition = 'opacity 0.5s';
+            menuContainer.style.opacity = '0';
+            
+            // Unmute and play the video
+            video.muted = false;
+            video.play().then(() => {
+                console.log('Video animation started');
+            }).catch(err => {
+                console.log('Video play failed:', err);
+                // If video fails, proceed directly to game
+                startGameAfterVideo();
+            });
+            
+            // When video ends, start the game
+            video.addEventListener('ended', startGameAfterVideo, { once: true });
+            
+            // Also add a timeout fallback in case video doesn't fire ended event
+            setTimeout(startGameAfterVideo, 6000); // 6 seconds max for 3-5 sec video + buffer
+        });
+        
+        function startGameAfterVideo() {
+            console.log('Video animation complete - starting game');
+            
             // Notify parent window/game engine to start
             if (window.parent && window.parent !== window) {
                 window.parent.postMessage({ type: 'START_GAME' }, '*');
@@ -340,7 +434,7 @@
             
             // Dispatch custom event for game engine
             window.dispatchEvent(new CustomEvent('gameMenuStartClicked'));
-        });
+        }
     </script>
 </body>
 </html>

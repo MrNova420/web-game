@@ -90,6 +90,7 @@ export class GameEngine {
     
     // Initialize THREE.js with performance settings
     this.scene = new THREE.Scene();
+    this.scene.background = new THREE.Color(0x87CEEB); // Sky blue background
     this.scene.fog = new THREE.Fog(0x87CEEB, 10, settings.viewDistance);
     
     this.camera = new THREE.PerspectiveCamera(
