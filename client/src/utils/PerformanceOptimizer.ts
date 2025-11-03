@@ -69,12 +69,13 @@ export class PerformanceOptimizer {
         break;
         
       case 'medium':
+        // PERFORMANCE FIX: Disable expensive features for better FPS
         this.settings = {
-          shadows: true,
-          antialiasing: true,
+          shadows: false,  // Shadows are expensive - disabled for 60 FPS
+          antialiasing: false,  // MSAA is expensive - disabled for 60 FPS
           postProcessing: false,
-          particleDensity: 0.7,
-          viewDistance: 750,
+          particleDensity: 0.5,  // Reduced from 0.7
+          viewDistance: 600,  // Reduced from 750 for fewer render calls
           lodEnabled: true,
           textureQuality: 'medium',
           targetFPS: 60,

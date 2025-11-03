@@ -77,15 +77,31 @@ export class IntegrationManager {
   
   /**
    * Update all systems in order
+   * PERFORMANCE FIX: Throttle non-critical systems to reduce frame load
    */
+  private frameCount = 0;
+  private lowFrequencySystems = new Set([
+    'save', 'achievements', 'tutorial', 'minimap', 'weather', 
+    'dungeon', 'environment', 'assetPool', 'performance'
+  ]);
+  
   public updateAll(deltaTime: number): void {
     if (this.disposed) return;
+    
+    this.frameCount++;
     
     for (const systemName of this.updateOrder) {
       const system = this.systems.get(systemName);
       if (system && typeof system.update === 'function') {
         try {
-          system.update(deltaTime);
+          // PERFORMANCE FIX: Only update low-priority systems every 5th frame (12 FPS)
+          if (this.lowFrequencySystems.has(systemName)) {
+            if (this.frameCount % 5 === 0) {
+              system.update(deltaTime * 5); // Scale deltaTime accordingly
+            }
+          } else {
+            system.update(deltaTime);
+          }
         } catch (error) {
           console.error(`[IntegrationManager] Error updating ${systemName}:`, error);
         }

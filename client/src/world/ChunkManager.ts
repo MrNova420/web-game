@@ -37,9 +37,23 @@ export class ChunkManager {
   }
 
   // Standard update method for IntegrationManager
+  // PERFORMANCE FIX: Only update chunks when player moves significantly (not every frame!)
+  private lastUpdatePosition: THREE.Vector3 = new THREE.Vector3(999999, 0, 999999);
+  private updateThreshold = 32; // Update when player moves 32 units (half a chunk)
+  
   update(deltaTime: number) {
-    if (this.scene) {
-      this.updateChunks(this.playerPosition, this.scene);
+    if (!this.scene) return;
+    
+    // CRITICAL PERFORMANCE FIX: Don't run updateChunks every frame!
+    // Only update when player has moved significantly
+    const distanceMoved = this.playerPosition.distanceTo(this.lastUpdatePosition);
+    
+    if (distanceMoved > this.updateThreshold) {
+      this.lastUpdatePosition.copy(this.playerPosition);
+      // Fire and forget - don't await to prevent blocking
+      this.updateChunks(this.playerPosition, this.scene).catch(err => 
+        console.error('[ChunkManager] Chunk update error:', err)
+      );
     }
   }
 
