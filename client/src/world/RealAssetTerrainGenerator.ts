@@ -178,7 +178,8 @@ export class RealAssetTerrainGenerator {
             instancedMesh.receiveShadow = true;
             instancedMesh.count = 0;  // Start at 0, will be incremented as tiles are placed
             instancedMesh.visible = true;  // Explicitly set visible
-            instancedMesh.frustumCulled = false;  // Disable frustum culling temporarily for debugging
+            instancedMesh.frustumCulled = true;  // Enable frustum culling for performance
+            instancedMesh.name = `terrain_instanced_${tilePath.split('/').pop()}`;
             
             scene.add(instancedMesh);
             this.instancedMeshes.set(tilePath, instancedMesh);

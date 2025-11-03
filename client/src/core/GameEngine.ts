@@ -148,11 +148,15 @@ export class GameEngine {
     canvas.style.position = 'fixed';
     canvas.style.top = '0';
     canvas.style.left = '0';
-    canvas.style.zIndex = '1';  // Below UI but above everything else
+    canvas.style.zIndex = '1';  // Below UI (z-index 100+) but above everything else
+    canvas.style.background = '#87CEEB'; // Sky blue backup
     
     document.body.appendChild(canvas);
     
     console.log('[GameEngine] Canvas appended to body with proper styling');
+    console.log('[GameEngine] Canvas z-index:', canvas.style.zIndex);
+    console.log('[GameEngine] Canvas visibility:', canvas.style.visibility);
+    console.log('[GameEngine] Canvas display:', canvas.style.display);
     
     // Handle window resize
     window.addEventListener('resize', () => {
@@ -425,11 +429,17 @@ export class GameEngine {
     console.log('[GameEngine] Starting game loop...');
     console.log('[GameEngine] Scene children count:', this.scene.children.length);
     console.log('[GameEngine] Scene children:', this.scene.children.map(c => c.type + (c.name ? ` (${c.name})` : '')));
+    console.log('[GameEngine] Camera position:', this.camera.position);
+    console.log('[GameEngine] Renderer size:', this.renderer.getSize(new THREE.Vector2()));
+    console.log('[GameEngine] Canvas element:', this.renderer.domElement);
+    console.log('[GameEngine] Canvas in DOM:', document.body.contains(this.renderer.domElement));
     
     this.isRunning = true;
     this.isPaused = false;
     this.lastTime = performance.now();
     this.gameLoop();
+    
+    console.log('[GameEngine] ✓ Game loop started successfully!');
   }
   
   /**
@@ -491,6 +501,12 @@ export class GameEngine {
    * Render the scene
    */
   private render(): void {
+    // Ensure renderer and scene are valid
+    if (!this.renderer || !this.scene || !this.camera) {
+      console.error('[GameEngine] Cannot render - missing renderer, scene, or camera');
+      return;
+    }
+    
     this.renderer.render(this.scene, this.camera);
   }
   
