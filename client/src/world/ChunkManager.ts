@@ -47,7 +47,15 @@ export class ChunkManager {
     const chunkX = Math.floor(playerPosition.x / 64);
     const chunkZ = Math.floor(playerPosition.z / 64);
     
-    console.log(`[ChunkManager] Updating chunks around player at (${playerPosition.x.toFixed(1)}, ${playerPosition.z.toFixed(1)}) - chunk (${chunkX}, ${chunkZ})`);
+    // Only log on significant position changes to avoid spam
+    const shouldLog = !this.lastLoggedChunk || 
+                      Math.abs(this.lastLoggedChunk.x - chunkX) > 0 || 
+                      Math.abs(this.lastLoggedChunk.z - chunkZ) > 0;
+    
+    if (shouldLog) {
+      console.log(`[ChunkManager] Updating chunks around player at (${playerPosition.x.toFixed(1)}, ${playerPosition.z.toFixed(1)}) - chunk (${chunkX}, ${chunkZ})`);
+      this.lastLoggedChunk = { x: chunkX, z: chunkZ };
+    }
 
     for (let x = -this.renderDistance; x <= this.renderDistance; x++) {
       for (let z = -this.renderDistance; z <= this.renderDistance; z++) {
@@ -56,13 +64,13 @@ export class ChunkManager {
         const key = `${cx},${cz}`;
 
         if (!this.chunks.has(key)) {
-          console.log(`[ChunkManager] Generating new chunk ${key}...`);
+          if (shouldLog) console.log(`[ChunkManager] Generating new chunk ${key}...`);
           
           // Generate terrain using REAL tile models
           const chunkGroup = await this.terrainGenerator.generateChunk(cx, cz, scene);
           this.chunks.set(key, chunkGroup);
           
-          console.log(`[ChunkManager] Chunk ${key} generated with ${chunkGroup.children.length} children`);
+          if (shouldLog) console.log(`[ChunkManager] Chunk ${key} generated with ${chunkGroup.children.length} children`);
           
           // Populate vegetation for this chunk
           if (this.vegetationManager) {
@@ -100,6 +108,8 @@ export class ChunkManager {
       }
     }
     
-    console.log(`[ChunkManager] Total active chunks: ${this.chunks.size}`);
+    if (shouldLog) console.log(`[ChunkManager] Total active chunks: ${this.chunks.size}`);
   }
+  
+  private lastLoggedChunk: { x: number, z: number } | null = null;
 }

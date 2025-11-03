@@ -153,6 +153,7 @@ export class RealAssetTerrainGenerator {
     // Load each unique tile model ONCE
     for (const tilePath of allTilePaths) {
       try {
+        console.log(`[TerrainGenerator] Loading tile model: ${tilePath}`);
         const model = await this.assetLoader.loadModel(tilePath);
         
         // Extract geometry and material from model
@@ -185,7 +186,7 @@ export class RealAssetTerrainGenerator {
             this.instancedMeshes.set(tilePath, instancedMesh);
             this.instanceCounts.set(tilePath, 0);
             
-            console.log(`[TerrainGenerator] Created instanced mesh for ${tilePath.split('/').pop()} - added to scene`);
+            console.log(`[TerrainGenerator] ✓ Created instanced mesh for ${tilePath.split('/').pop()} - added to scene`);
           } else {
             // CPU MODE: Cache the model for cloning
             const cachedMesh = new THREE.Mesh(geometry, material);
@@ -194,15 +195,18 @@ export class RealAssetTerrainGenerator {
             this.cpuMeshCache.set(tilePath, cachedMesh);
           }
           
-          console.log(`[TerrainGenerator] Loaded ${this.useGPUInstancing ? '(GPU)' : '(CPU)'}: ${tilePath.split('/').pop()}`);
+          console.log(`[TerrainGenerator] ✓ Loaded ${this.useGPUInstancing ? '(GPU)' : '(CPU)'}: ${tilePath.split('/').pop()}`);
+        } else {
+          console.error(`[TerrainGenerator] ✗ Failed to extract geometry/material from ${tilePath}`);
         }
       } catch (error) {
-        console.warn(`[TerrainGenerator] Failed to load tile: ${tilePath}`, error);
+        console.error(`[TerrainGenerator] ✗ Failed to load tile: ${tilePath}`, error);
       }
     }
     
-    console.log(`[TerrainGenerator] Pre-loaded ${allTilePaths.size} unique tile models (${this.useGPUInstancing ? 'GPU instancing' : 'CPU rendering'})`);
-  }
+    console.log(`[TerrainGenerator] ✓ Pre-loaded ${allTilePaths.size} unique tile models (${this.useGPUInstancing ? 'GPU instancing' : 'CPU rendering'})`);
+    console.log(`[TerrainGenerator] Scene now has ${scene.children.length} children`);
+    console.log(`[TerrainGenerator] Instanced meshes in scene:`, Array.from(this.instancedMeshes.keys()).map(k => k.split('/').pop()));
 
   /**
    * Generate terrain chunk using INSTANCED tile models (GPU) or cloned meshes (CPU)
