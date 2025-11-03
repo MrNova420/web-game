@@ -468,8 +468,10 @@ export class GameEngine {
     // PERFORMANCE FIX: Start loading terrain chunks progressively AFTER game starts
     if (this.chunkManager && this.scene) {
       console.log('[GameEngine] Starting progressive chunk loading in background...');
+      const chunkMgr = this.chunkManager; // Store non-null reference
+      const sceneRef = this.scene;
       setTimeout(() => {
-        this.chunkManager.updateChunks(new THREE.Vector3(0, 0, 0), this.scene)
+        chunkMgr.updateChunks(new THREE.Vector3(0, 0, 0), sceneRef)
           .then(() => console.log('[GameEngine] ✓ Initial terrain chunks loaded!'))
           .catch((err: Error) => console.error('[GameEngine] ✗ Chunk loading failed:', err));
       }, 100);  // Small delay to let game loop start first
