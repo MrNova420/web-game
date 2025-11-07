@@ -116,7 +116,8 @@ export class UltimateQualityOptimizer {
     // Advanced rendering features
     this.renderer.sortObjects = true;
     this.renderer.autoClear = true;
-    this.renderer.physicallyCorrectLights = true;
+    // Note: physicallyCorrectLights deprecated in THREE.js r155+
+    // Lighting is now physically correct by default
     
     // Camera optimization
     this.camera.far = settings.drawDistance;

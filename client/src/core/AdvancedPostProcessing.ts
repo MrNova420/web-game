@@ -10,6 +10,11 @@ export class TAAPass extends ShaderPass {
   private sampleIndex: number = 0;
   private jitterOffsets: THREE.Vector2[] = [];
   
+  // Reusable objects for rendering
+  private copyQuad: THREE.Mesh;
+  private copyScene: THREE.Scene;
+  private copyCamera: THREE.OrthographicCamera;
+  
   constructor(width: number, height: number) {
     const shader = {
       uniforms: {
@@ -61,6 +66,15 @@ export class TAAPass extends ShaderPass {
     // Generate jitter offsets for sub-pixel sampling (8 samples)
     this.generateJitterOffsets(8);
     
+    // Create reusable rendering objects (once, not per frame)
+    this.copyScene = new THREE.Scene();
+    this.copyCamera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+    this.copyQuad = new THREE.Mesh(
+      new THREE.PlaneGeometry(2, 2),
+      new THREE.MeshBasicMaterial()
+    );
+    this.copyScene.add(this.copyQuad);
+    
     console.log('[TAAPass] Temporal Anti-Aliasing initialized');
   }
   
@@ -103,22 +117,24 @@ export class TAAPass extends ShaderPass {
     // Render TAA pass
     super.render(renderer, writeBuffer, readBuffer);
     
-    // Update history by copying current output
-    // Use framebuffer copy for better compatibility
+    // Update history by copying current output using reusable objects
     const currentRenderTarget = renderer.getRenderTarget();
     renderer.setRenderTarget(this.historyTexture);
     
     // Clear and copy writeBuffer to history
     renderer.clear();
-    const quad = new THREE.Mesh(
-      new THREE.PlaneGeometry(2, 2),
-      new THREE.MeshBasicMaterial({ map: writeBuffer.texture })
-    );
-    renderer.render(new THREE.Scene().add(quad), new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1));
+    
+    // Update material with current texture
+    if (this.copyQuad.material instanceof THREE.MeshBasicMaterial) {
+      this.copyQuad.material.map = writeBuffer.texture;
+      this.copyQuad.material.needsUpdate = true;
+    }
+    
+    renderer.render(this.copyScene, this.copyCamera);
     
     // Restore original render target
     renderer.setRenderTarget(currentRenderTarget);
-    
+  }
     // Clean up temporary mesh
     quad.geometry.dispose();
     if (quad.material instanceof THREE.Material) {
@@ -133,6 +149,12 @@ export class TAAPass extends ShaderPass {
   
   public dispose(): void {
     this.historyTexture.dispose();
+    
+    // Dispose reusable rendering objects
+    this.copyQuad.geometry.dispose();
+    if (this.copyQuad.material instanceof THREE.Material) {
+      this.copyQuad.material.dispose();
+    }
   }
 }
 
@@ -181,9 +203,6 @@ export const SSRShader = {
     vec3 getViewPosition(vec2 uv, float depth) {
       vec4 clipPos = vec4(uv * 2.0 - 1.0, depth * 2.0 - 1.0, 1.0);
       vec4 viewPos = inverseProjectionMatrix * clipPos;
-      return viewPos.xyz / viewPos.w;
-    }
-      vec4 viewPos = inverse(projectionMatrix) * clipPos;
       return viewPos.xyz / viewPos.w;
     }
     
