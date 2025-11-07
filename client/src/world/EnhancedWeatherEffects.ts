@@ -43,8 +43,11 @@ export class EnhancedWeatherEffects {
   }
   
   /**
-   * Trigger lightning flash
+   * Trigger lightning flash with managed timing
    */
+  private lightningState = { intensity: 0, step: 0 };
+  private lightningTimerId: number | null = null;
+  
   private triggerLightning(): void {
     if (!this.lightningLight) return;
     
@@ -57,22 +60,36 @@ export class EnhancedWeatherEffects {
       Math.sin(angle) * distance
     );
     
-    // Flash sequence
-    this.lightningLight.intensity = 15;
-    
-    setTimeout(() => {
-      if (this.lightningLight) this.lightningLight.intensity = 0;
-    }, 50);
-    
-    setTimeout(() => {
-      if (this.lightningLight) this.lightningLight.intensity = 10;
-    }, 100);
-    
-    setTimeout(() => {
-      if (this.lightningLight) this.lightningLight.intensity = 0;
-    }, 150);
+    // Use state-based animation instead of multiple timeouts
+    this.lightningState = { intensity: 15, step: 0 };
+    this.animateLightning();
     
     console.log('[EnhancedWeatherEffects] Lightning flash triggered');
+  }
+  
+  private animateLightning(): void {
+    if (!this.lightningLight) return;
+    
+    switch (this.lightningState.step) {
+      case 0:
+        this.lightningLight.intensity = 15;
+        this.lightningTimerId = window.setTimeout(() => this.animateLightning(), 50);
+        break;
+      case 1:
+        this.lightningLight.intensity = 0;
+        this.lightningTimerId = window.setTimeout(() => this.animateLightning(), 50);
+        break;
+      case 2:
+        this.lightningLight.intensity = 10;
+        this.lightningTimerId = window.setTimeout(() => this.animateLightning(), 50);
+        break;
+      case 3:
+        this.lightningLight.intensity = 0;
+        this.lightningTimerId = null;
+        return;
+    }
+    
+    this.lightningState.step++;
   }
   
   /**
@@ -110,9 +127,12 @@ export class EnhancedWeatherEffects {
   }
   
   /**
-   * Create volumetric light rays (god rays)
+   * Create volumetric light rays (god rays) - created once, toggled for performance
    */
   private createVolumetricLight(): void {
+    // Only create if it doesn't exist
+    if (this.volumetricLightMesh) return;
+    
     const geometry = new THREE.CylinderGeometry(0.1, 40, 200, 32, 1, true);
     const material = new THREE.ShaderMaterial({
       uniforms: {
@@ -151,6 +171,8 @@ export class EnhancedWeatherEffects {
     this.volumetricLightMesh.position.set(50, 100, -50);
     this.volumetricLightMesh.rotation.x = Math.PI;
     this.scene.add(this.volumetricLightMesh);
+    
+    console.log('[EnhancedWeatherEffects] Volumetric lighting created');
   }
   
   /**
@@ -170,8 +192,9 @@ export class EnhancedWeatherEffects {
         break;
       case 'clear':
         this.windStrength = 0.1;
-        if (Math.random() < 0.01) {
-          this.createVolumetricLight(); // God rays through clouds
+        // Toggle volumetric lighting (don't recreate each time)
+        if (Math.random() < 0.001 && !this.volumetricLightMesh) {
+          this.createVolumetricLight();
         }
         break;
       default:
@@ -284,6 +307,12 @@ export class EnhancedWeatherEffects {
    * Dispose resources
    */
   public dispose(): void {
+    // Clean up lightning timer
+    if (this.lightningTimerId !== null) {
+      window.clearTimeout(this.lightningTimerId);
+      this.lightningTimerId = null;
+    }
+    
     if (this.lightningLight) {
       this.scene.remove(this.lightningLight);
     }

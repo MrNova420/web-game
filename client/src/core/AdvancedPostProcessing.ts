@@ -97,18 +97,33 @@ export class TAAPass extends ShaderPass {
     writeBuffer: THREE.WebGLRenderTarget,
     readBuffer: THREE.WebGLRenderTarget
   ): void {
-    // Copy current frame to history after rendering
+    // Set input texture
     this.uniforms['tDiffuse'].value = readBuffer.texture;
     
-    // Render TAA
+    // Render TAA pass
     super.render(renderer, writeBuffer, readBuffer);
     
-    // Update history
-    renderer.copyTextureToTexture(
-      new THREE.Vector2(0, 0),
-      writeBuffer.texture,
-      this.historyTexture.texture
+    // Update history by copying current output
+    // Use framebuffer copy for better compatibility
+    const currentRenderTarget = renderer.getRenderTarget();
+    renderer.setRenderTarget(this.historyTexture);
+    
+    // Clear and copy writeBuffer to history
+    renderer.clear();
+    const quad = new THREE.Mesh(
+      new THREE.PlaneGeometry(2, 2),
+      new THREE.MeshBasicMaterial({ map: writeBuffer.texture })
     );
+    renderer.render(new THREE.Scene().add(quad), new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1));
+    
+    // Restore original render target
+    renderer.setRenderTarget(currentRenderTarget);
+    
+    // Clean up temporary mesh
+    quad.geometry.dispose();
+    if (quad.material instanceof THREE.Material) {
+      quad.material.dispose();
+    }
   }
   
   public setSize(width: number, height: number): void {
@@ -133,6 +148,7 @@ export const SSRShader = {
     resolution: { value: new THREE.Vector2(1, 1) },
     cameraMatrix: { value: new THREE.Matrix4() },
     projectionMatrix: { value: new THREE.Matrix4() },
+    inverseProjectionMatrix: { value: new THREE.Matrix4() },
     maxDistance: { value: 100 },
     thickness: { value: 0.1 },
     stride: { value: 1 },
@@ -154,6 +170,7 @@ export const SSRShader = {
     uniform vec2 resolution;
     uniform mat4 cameraMatrix;
     uniform mat4 projectionMatrix;
+    uniform mat4 inverseProjectionMatrix;
     uniform float maxDistance;
     uniform float thickness;
     uniform float stride;
@@ -163,6 +180,9 @@ export const SSRShader = {
     
     vec3 getViewPosition(vec2 uv, float depth) {
       vec4 clipPos = vec4(uv * 2.0 - 1.0, depth * 2.0 - 1.0, 1.0);
+      vec4 viewPos = inverseProjectionMatrix * clipPos;
+      return viewPos.xyz / viewPos.w;
+    }
       vec4 viewPos = inverse(projectionMatrix) * clipPos;
       return viewPos.xyz / viewPos.w;
     }

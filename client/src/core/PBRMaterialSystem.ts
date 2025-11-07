@@ -194,8 +194,9 @@ export class PBRMaterialSystem {
   
   /**
    * Create environment map for reflections
+   * Note: Renderer should be passed as parameter for efficiency
    */
-  public createEnvironmentMap(scene: THREE.Scene): THREE.CubeTexture | null {
+  public createEnvironmentMap(scene: THREE.Scene, renderer?: THREE.WebGLRenderer): THREE.CubeTexture | null {
     // Use existing skybox or create cube texture from scene
     // This provides realistic reflections on metallic surfaces
     const cubeRenderTarget = new THREE.WebGLCubeRenderTarget(256);
@@ -203,7 +204,10 @@ export class PBRMaterialSystem {
     scene.add(cubeCamera);
     
     // Update cube camera to capture environment
-    cubeCamera.update(new THREE.WebGLRenderer(), scene);
+    // Renderer should be provided by caller for efficiency
+    if (renderer) {
+      cubeCamera.update(renderer, scene);
+    }
     
     console.log('[PBRMaterialSystem] Environment map created for reflections');
     return cubeRenderTarget.texture;

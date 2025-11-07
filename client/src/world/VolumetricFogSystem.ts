@@ -27,10 +27,10 @@ export class VolumetricFogSystem {
   }
   
   /**
-   * Set up volumetric fog shader
+   * Set up volumetric fog using enhanced THREE.js fog
    */
   private setupVolumetricFog(): void {
-    // Create fog shader uniforms
+    // Create fog uniforms for potential future shader implementation
     this.fogUniforms = {
       fogColor: { value: this.fogColor },
       fogNear: { value: this.fogNear },
@@ -39,56 +39,11 @@ export class VolumetricFogSystem {
       cameraPos: { value: this.camera.position }
     };
     
-    // Enhanced fog with distance-based density
-    const fogShader = {
-      vertexShader: `
-        varying vec3 vWorldPosition;
-        varying float vDepth;
-        
-        void main() {
-          vec4 worldPosition = modelMatrix * vec4(position, 1.0);
-          vWorldPosition = worldPosition.xyz;
-          
-          vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
-          vDepth = -mvPosition.z;
-          
-          gl_Position = projectionMatrix * mvPosition;
-        }
-      `,
-      fragmentShader: `
-        uniform vec3 fogColor;
-        uniform float fogNear;
-        uniform float fogFar;
-        uniform float fogDensity;
-        uniform vec3 cameraPos;
-        
-        varying vec3 vWorldPosition;
-        varying float vDepth;
-        
-        void main() {
-          // Calculate distance-based fog
-          float depth = vDepth;
-          float fogFactor = smoothstep(fogNear, fogFar, depth);
-          
-          // Add height-based fog density
-          float heightFactor = max(0.0, vWorldPosition.y / 100.0);
-          float adjustedDensity = fogDensity * (1.0 - heightFactor * 0.5);
-          
-          // Exponential fog for more realistic falloff
-          float expFog = 1.0 - exp(-adjustedDensity * depth * depth);
-          fogFactor = mix(fogFactor, expFog, 0.5);
-          
-          // Output fog color with calculated opacity
-          gl_FragColor = vec4(fogColor, fogFactor * 0.3);
-        }
-      `
-    };
-    
-    // Note: Volumetric fog is typically implemented as a post-processing effect
-    // For now, we'll enhance the standard THREE.js fog
+    // Note: Custom volumetric fog shader can be implemented as post-processing effect
+    // For now, using enhanced THREE.js exponential fog for better performance
     this.updateSceneFog();
     
-    console.log('[VolumetricFogSystem] Volumetric fog shader configured');
+    console.log('[VolumetricFogSystem] Volumetric fog configured with exponential density');
   }
   
   /**
