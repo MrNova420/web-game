@@ -58,8 +58,8 @@ export class RealAssetTerrainGenerator {
       // Use stone tiles
       tiles: [
         '/extracted_assets/KayKit_DungeonRemastered/Assets/obj/floor_tile_small.obj',
+        '/extracted_assets/KayKit_DungeonRemastered/Assets/obj/floor_tile_large_rocks.obj',
         '/extracted_assets/KayKit_DungeonRemastered/Assets/obj/floor_tile_small_broken_A.obj',
-        '/extracted_assets/KayKit_DungeonRemastered/Assets/obj/floor_tile_small_corner.obj',
       ]
     },
     desert: {
