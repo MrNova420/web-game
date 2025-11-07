@@ -102,10 +102,13 @@ export class GameEngine {
     this.camera = new THREE.PerspectiveCamera(
       75,
       window.innerWidth / window.innerHeight,
-      0.1,
-      settings.viewDistance
+      0.1,  // Near plane - keep close for proper depth
+      1000  // Far plane - matches view distance
     );
     this.camera.position.set(0, 20, 30); // Set initial camera position
+    
+    // RENDERING FIX: Update camera projection matrix
+    this.camera.updateProjectionMatrix();
     
     this.renderer = new THREE.WebGLRenderer({ 
       antialias: settings.antialiasing,
@@ -569,7 +572,7 @@ export class GameEngine {
   
   /**
    * Render the scene
-   * PERFORMANCE OPTIMIZATIONS: Frustum culling, selective rendering
+   * RENDERING FIX: Proper frustum culling and camera updates
    */
   private renderCount = 0;
   
@@ -587,9 +590,10 @@ export class GameEngine {
       this.renderer.info.reset();
     }
     
-    // PERFORMANCE FIX: Apply frustum culling manually for better control
-    // Three.js does this automatically, but we can optimize by pre-filtering
+    // RENDERING FIX: Update camera matrices for proper frustum culling
+    this.camera.updateMatrix();
     this.camera.updateMatrixWorld();
+    this.camera.updateProjectionMatrix();
     
     this.renderer.render(this.scene, this.camera);
   }
