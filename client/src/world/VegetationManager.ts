@@ -73,7 +73,7 @@ export class VegetationManager {
             material = child.material instanceof Array ? child.material[0].clone() : child.material.clone();
             
             // RENDERING FIX: Ensure geometry has normals
-            if (!geometry.attributes.normal) {
+            if (geometry && !geometry.attributes.normal) {
               geometry.computeVertexNormals();
             }
             

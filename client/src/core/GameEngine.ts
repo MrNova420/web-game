@@ -330,10 +330,11 @@ export class GameEngine {
     // LIGHTING FIX: Create stronger lights for better visibility
     const directionalLight = new THREE.DirectionalLight(0xffffff, 1.5); // Increased intensity
     directionalLight.position.set(50, 100, 50);
-    directionalLight.castShadow = settings.shadows;
+    const perfSettings = this.perfOptimizer.getSettings();
+    directionalLight.castShadow = perfSettings.shadows;
     
     // LIGHTING FIX: Configure shadow properties for better quality
-    if (settings.shadows) {
+    if (perfSettings.shadows) {
       directionalLight.shadow.mapSize.width = 2048;
       directionalLight.shadow.mapSize.height = 2048;
       directionalLight.shadow.camera.near = 0.5;
