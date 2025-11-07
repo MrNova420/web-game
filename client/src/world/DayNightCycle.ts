@@ -7,6 +7,9 @@ export class DayNightCycle {
   private directionalLight: THREE.DirectionalLight;
   private ambientLight: THREE.AmbientLight;
   private skyboxManager: SkyboxManager;
+  // Track last skybox update hour to prevent loading on every frame when hour % 6 === 0
+  // Initialize to -1 so first update at hour 0, 6, 12, or 18 will trigger
+  private lastSkyboxHour: number = -1;
 
   constructor(
     directionalLight: THREE.DirectionalLight,
@@ -28,8 +31,10 @@ export class DayNightCycle {
     // Update lighting based on time of day
     this.updateLighting();
     
-    // Update skybox every hour
-    if (Math.floor(this.timeOfDay) % 6 === 0) {
+    // CRITICAL FIX: Only update skybox when crossing hour boundaries, not every frame!
+    const currentHour = Math.floor(this.timeOfDay);
+    if (currentHour !== this.lastSkyboxHour && currentHour % 6 === 0) {
+      this.lastSkyboxHour = currentHour;
       this.updateSkybox();
     }
   }

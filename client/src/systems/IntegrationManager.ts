@@ -78,12 +78,14 @@ export class IntegrationManager {
   /**
    * Update all systems in order
    * PERFORMANCE FIX: Throttle non-critical systems to reduce frame load
+   * Note: Performance monitor is updated separately in GameEngine with renderer/scene
    */
   private frameCount = 0;
   private lowFrequencySystems = new Set([
     'save', 'achievements', 'tutorial', 'minimap', 'weather', 
-    'dungeon', 'environment', 'assetPool', 'performance'
+    'dungeon', 'environment', 'assetPool'
   ]);
+  private skipInGeneralUpdate = new Set(['performance']);
   
   public updateAll(deltaTime: number): void {
     if (this.disposed) return;
@@ -91,6 +93,11 @@ export class IntegrationManager {
     this.frameCount++;
     
     for (const systemName of this.updateOrder) {
+      // Skip systems that need special handling
+      if (this.skipInGeneralUpdate.has(systemName)) {
+        continue;
+      }
+      
       const system = this.systems.get(systemName);
       if (system && typeof system.update === 'function') {
         try {

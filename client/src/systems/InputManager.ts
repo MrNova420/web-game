@@ -8,8 +8,8 @@ export interface KeyBinding {
 }
 
 /**
- * InputManager - Handles keyboard and mouse input
- * Centralizes input handling for the game
+ * InputManager - Handles keyboard, mouse, and touch input
+ * Centralizes input handling for the game with mobile support
  */
 export class InputManager {
   private keys = new Map<string, boolean>();
@@ -18,6 +18,20 @@ export class InputManager {
   private mouseDelta = { x: 0, y: 0 };
   private lastMousePosition = { x: 0, y: 0 };
   private wheelDelta = 0;
+  
+  // Touch/Mobile support
+  private touches = new Map<number, { x: number; y: number }>();
+  private touchMovement = { x: 0, z: 0 }; // Virtual joystick movement
+  private touchLook = { x: 0, y: 0 }; // Touch look/camera control
+  private isMobileDevice = false;
+  private touchJoystickActive = false;
+  private touchJoystickStart = { x: 0, y: 0 };
+  private touchCameraActive = false;
+  private touchCameraLast = { x: 0, y: 0 };
+  
+  // Touch joystick configuration
+  private readonly TOUCH_JOYSTICK_MAX_DISTANCE = 100; // Maximum joystick distance in pixels
+  private readonly TOUCH_JOYSTICK_DEADZONE = 10; // Minimum distance before registering input
   
   private keyBindings: KeyBinding[] = [
     { action: 'move_forward', key: 'w', description: 'Move Forward' },
@@ -36,12 +50,17 @@ export class InputManager {
   ];
 
   constructor(canvas?: HTMLCanvasElement) {
+    // Detect mobile device
+    this.isMobileDevice = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+                          ('ontouchstart' in window) ||
+                          (navigator.maxTouchPoints > 0);
+    
+    console.log(`InputManager initialized (Mobile: ${this.isMobileDevice})`);
     this.setupEventListeners(canvas);
-    console.log('InputManager initialized');
   }
 
   /**
-   * Setup event listeners
+   * Setup event listeners for keyboard, mouse, and touch
    */
   private setupEventListeners(canvas?: HTMLCanvasElement) {
     // Keyboard events
@@ -78,6 +97,94 @@ export class InputManager {
     target.addEventListener('wheel', (e: any) => {
       this.wheelDelta = e.deltaY;
     });
+
+    // Touch events for mobile
+    target.addEventListener('touchstart', (e: TouchEvent) => {
+      e.preventDefault();
+      
+      for (let i = 0; i < e.touches.length; i++) {
+        const touch = e.touches[i];
+        this.touches.set(touch.identifier, { x: touch.clientX, y: touch.clientY });
+        
+        // Left half of screen = movement joystick
+        if (touch.clientX < window.innerWidth / 2) {
+          this.touchJoystickActive = true;
+          this.touchJoystickStart = { x: touch.clientX, y: touch.clientY };
+        }
+        // Right half of screen = camera look
+        else {
+          this.touchCameraActive = true;
+          this.touchCameraLast = { x: touch.clientX, y: touch.clientY };
+        }
+      }
+    }, { passive: false });
+
+    target.addEventListener('touchmove', (e: TouchEvent) => {
+      e.preventDefault();
+      
+      for (let i = 0; i < e.touches.length; i++) {
+        const touch = e.touches[i];
+        const touchPos = { x: touch.clientX, y: touch.clientY };
+        this.touches.set(touch.identifier, touchPos);
+        
+        // Update movement joystick
+        if (this.touchJoystickActive && touch.clientX < window.innerWidth / 2) {
+          const dx = touchPos.x - this.touchJoystickStart.x;
+          const dz = touchPos.y - this.touchJoystickStart.y;
+          
+          // Normalize to -1 to 1 range (with deadzone)
+          const distance = Math.sqrt(dx * dx + dz * dz);
+          
+          if (distance > this.TOUCH_JOYSTICK_DEADZONE) {
+            const normalizedDistance = Math.min(distance, this.TOUCH_JOYSTICK_MAX_DISTANCE) / this.TOUCH_JOYSTICK_MAX_DISTANCE;
+            this.touchMovement.x = (dx / distance) * normalizedDistance;
+            this.touchMovement.z = (dz / distance) * normalizedDistance;
+          } else {
+            this.touchMovement.x = 0;
+            this.touchMovement.z = 0;
+          }
+        }
+        
+        // Update camera look
+        if (this.touchCameraActive && touch.clientX >= window.innerWidth / 2) {
+          this.touchLook.x = touchPos.x - this.touchCameraLast.x;
+          this.touchLook.y = touchPos.y - this.touchCameraLast.y;
+          this.touchCameraLast = touchPos;
+        }
+      }
+    }, { passive: false });
+
+    target.addEventListener('touchend', (e: TouchEvent) => {
+      e.preventDefault();
+      
+      for (let i = 0; i < e.changedTouches.length; i++) {
+        const touch = e.changedTouches[i];
+        this.touches.delete(touch.identifier);
+      }
+      
+      // Reset touch controls if no touches remain
+      if (this.touches.size === 0) {
+        this.touchJoystickActive = false;
+        this.touchCameraActive = false;
+        this.touchMovement = { x: 0, z: 0 };
+        this.touchLook = { x: 0, y: 0 };
+      }
+    }, { passive: false });
+
+    target.addEventListener('touchcancel', (e: TouchEvent) => {
+      // Same as touchend
+      for (let i = 0; i < e.changedTouches.length; i++) {
+        const touch = e.changedTouches[i];
+        this.touches.delete(touch.identifier);
+      }
+      
+      if (this.touches.size === 0) {
+        this.touchJoystickActive = false;
+        this.touchCameraActive = false;
+        this.touchMovement = { x: 0, z: 0 };
+        this.touchLook = { x: 0, y: 0 };
+      }
+    }, { passive: false });
 
     // Prevent context menu
     if (canvas) {
@@ -121,8 +228,18 @@ export class InputManager {
 
   /**
    * Get mouse delta (movement since last frame)
+   * For mobile, returns touch camera look delta
    */
   getMouseDelta(): { x: number; y: number } {
+    // If mobile and touch look is active, return touch delta
+    if (this.isMobileDevice && this.touchCameraActive) {
+      const delta = { ...this.touchLook };
+      this.touchLook.x = 0;
+      this.touchLook.y = 0;
+      return delta;
+    }
+    
+    // Otherwise return mouse delta
     const delta = { ...this.mouseDelta };
     // Reset delta after reading
     this.mouseDelta.x = 0;
@@ -176,21 +293,31 @@ export class InputManager {
 
   /**
    * Get movement input vector
+   * Combines keyboard and touch joystick input
    */
   getMovementInput(): { x: number; z: number } {
     let x = 0;
     let z = 0;
 
+    // Keyboard input
     if (this.isActionPressed('move_forward')) z -= 1;
     if (this.isActionPressed('move_backward')) z += 1;
     if (this.isActionPressed('move_left')) x -= 1;
     if (this.isActionPressed('move_right')) x += 1;
 
-    // Normalize diagonal movement
-    if (x !== 0 && z !== 0) {
+    // Touch joystick input (combines with keyboard if both active)
+    if (this.isMobileDevice && this.touchJoystickActive) {
+      x += this.touchMovement.x;
+      z += this.touchMovement.z;
+    }
+
+    // Normalize combined movement (may exceed 1.0 if both touch and keyboard active)
+    if (x !== 0 || z !== 0) {
       const length = Math.sqrt(x * x + z * z);
-      x /= length;
-      z /= length;
+      if (length > 1) {
+        x /= length;
+        z /= length;
+      }
     }
 
     return { x, z };
@@ -198,11 +325,27 @@ export class InputManager {
 
   /**
    * Check if any movement key is pressed
+   * Includes touch joystick for mobile
    */
   isMoving(): boolean {
     return this.isActionPressed('move_forward') ||
            this.isActionPressed('move_backward') ||
            this.isActionPressed('move_left') ||
-           this.isActionPressed('move_right');
+           this.isActionPressed('move_right') ||
+           (this.isMobileDevice && this.touchJoystickActive);
+  }
+
+  /**
+   * Check if device is mobile
+   */
+  isMobile(): boolean {
+    return this.isMobileDevice;
+  }
+
+  /**
+   * Get touch count
+   */
+  getTouchCount(): number {
+    return this.touches.size;
   }
 }

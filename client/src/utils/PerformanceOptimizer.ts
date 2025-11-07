@@ -103,13 +103,30 @@ export class PerformanceOptimizer {
     return { ...this.settings };
   }
   
+  private lastAdjustmentTime = 0;
+  private readonly ADJUSTMENT_COOLDOWN = 5000; // Only adjust every 5 seconds
+  
   public adjustSettings(fps: number): void {
     // Dynamically adjust settings if FPS drops
+    const now = Date.now();
+    
+    // Throttle adjustments to prevent spam
+    if (now - this.lastAdjustmentTime < this.ADJUSTMENT_COOLDOWN) {
+      return;
+    }
+    
     if (fps < 30 && this.deviceTier !== 'low') {
       console.warn('[PerformanceOptimizer] Low FPS detected, reducing quality');
       this.settings.shadows = false;
       this.settings.particleDensity *= 0.7;
       this.settings.viewDistance *= 0.8;
+      this.lastAdjustmentTime = now;
+    } else if (fps >= 55 && this.deviceTier === 'high') {
+      // Gradually restore quality if FPS is good
+      if (this.settings.particleDensity < 1.0) {
+        this.settings.particleDensity = Math.min(1.0, this.settings.particleDensity * 1.1);
+        this.lastAdjustmentTime = now;
+      }
     }
   }
 }

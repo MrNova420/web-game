@@ -222,8 +222,9 @@
 <body>
     <div id="game-menu">
         <!-- Background video that plays on Play button click -->
-        <video id="menu-video" preload="metadata" muted playsinline style="pointer-events: none;" poster="">
+        <video id="menu-video" preload="auto" muted playsinline loop webkit-playsinline x-webkit-airplay="allow" style="pointer-events: none;">
             <source src="/mainmenubackgroundvideo.mp4" type="video/mp4">
+            Your browser does not support the video tag.
         </video>
         <div class="menu-container">
             <h1 class="game-title">YOUR GAME</h1>
@@ -322,13 +323,7 @@
             }
         });
 
-        // Menu button handlers
-        document.getElementById('play-btn').addEventListener('click', function() {
-            console.log('Play clicked');
-            // Add your play game logic here
-            // Example: window.location.href = 'game.html';
-        });
-
+        // Menu button handlers (simplified - Play button has special handler below)
         document.getElementById('continue-btn').addEventListener('click', function() {
             console.log('Continue clicked');
             // Add your continue game logic here
@@ -424,43 +419,60 @@
         // Start preloading immediately
         preloadAssets();
         
-        // Connect Play button to start game
+        // Connect Play button to start game with fullscreen, video, and background loading
         document.getElementById('play-btn').addEventListener('click', function() {
-            console.log('Play button clicked - starting video animation');
+            console.log('Play button clicked - entering fullscreen and starting video animation');
+            
+            // Force fullscreen on play button click
+            enterFullscreen();
             
             // Get the video element
             const video = document.getElementById('menu-video');
             
-            // Hide menu buttons to show video animation
+            // Hide menu buttons with smooth transition to show video animation
             const menuContainer = document.querySelector('.menu-container');
-            menuContainer.style.transition = 'opacity 0.5s';
+            menuContainer.style.transition = 'opacity 0.5s ease-out';
             menuContainer.style.opacity = '0';
             
-            // Reset video to beginning before playing
-            video.currentTime = 0;
-            
-            // Ensure video is high quality
-            video.setAttribute('preload', 'auto');
-            video.load(); // Force reload to ensure full quality
-            
-            // Unmute and play the video
-            video.muted = false;
-            video.volume = 1.0; // Full volume
-            video.playbackRate = 1.0; // Normal speed, no rushing
-            
-            video.play().then(() => {
-                console.log('Video animation started - waiting for completion');
-            }).catch(err => {
-                console.log('Video play failed:', err);
-                // If video fails, proceed directly to game
-                startGameAfterVideo();
-            });
-            
-            // When video ACTUALLY ends, start the game (no timeout fallback)
-            video.addEventListener('ended', startGameAfterVideo, { once: true });
-            
-            console.log('Video will play fully before starting game - no interruptions');
+            // After menu fades out, start video and begin background game loading
+            setTimeout(() => {
+                // Reset video to beginning and ensure it's loaded
+                video.currentTime = 0;
+                video.setAttribute('preload', 'auto');
+                
+                // Unmute for playback
+                video.muted = false;
+                video.volume = 1.0; // Full volume
+                video.playbackRate = 1.0; // Normal speed
+                
+                // Set up ended event BEFORE playing
+                video.addEventListener('ended', startGameAfterVideo, { once: true });
+                
+                // Play the video (don't call load() as it interrupts playback)
+                const playPromise = video.play();
+                
+                if (playPromise !== undefined) {
+                    playPromise.then(() => {
+                        console.log('Video animation started - game loading in background');
+                        // Trigger game loading in background while video plays
+                        preloadGameInBackground();
+                    }).catch(err => {
+                        console.log('Video play failed:', err);
+                        // If video fails, proceed directly to game
+                        startGameAfterVideo();
+                    });
+                }
+                
+                console.log('Video will play fully before starting game - smooth transition');
+            }, 500); // Wait for menu fade out
         });
+        
+        // Preload game assets in background during video
+        function preloadGameInBackground() {
+            console.log('Starting background game asset preloading during video...');
+            // This will be picked up by the main game engine when video ends
+            window.gamePreloadStarted = true;
+        }
         
         function startGameAfterVideo() {
             console.log('Video animation complete - starting game now');
