@@ -43,8 +43,14 @@ export class SettingsSystem {
 
   constructor() {
     this.settings = this.getDefaultSettings();
-    this.load();
-    console.log('SettingsSystem initialized');
+    const loaded = this.load();
+    if (!loaded) {
+      // If no settings found, save defaults
+      this.save();
+      console.log('SettingsSystem initialized with default settings');
+    } else {
+      console.log('SettingsSystem initialized with saved settings');
+    }
   }
 
   /**
