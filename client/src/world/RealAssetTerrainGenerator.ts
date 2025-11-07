@@ -157,15 +157,37 @@ export class RealAssetTerrainGenerator {
         const model = await this.assetLoader.loadModel(tilePath);
         
         // Extract geometry and material from model
+        // Handle different model structures - some models have mesh as root, others nested
         let geometry: THREE.BufferGeometry | null = null;
         let material: THREE.Material | null = null;
         
-        model.traverse((child) => {
-          if (child instanceof THREE.Mesh && !geometry) {
-            geometry = child.geometry.clone();
-            material = child.material instanceof Array ? child.material[0].clone() : child.material.clone();
-          }
-        });
+        // Try to get from the model itself first
+        if (model instanceof THREE.Mesh) {
+          geometry = model.geometry.clone();
+          material = model.material instanceof Array ? model.material[0].clone() : model.material.clone();
+        }
+        
+        // Otherwise traverse children to find mesh
+        if (!geometry) {
+          model.traverse((child) => {
+            if (child instanceof THREE.Mesh && !geometry) {
+              geometry = child.geometry.clone();
+              material = child.material instanceof Array ? child.material[0].clone() : child.material.clone();
+            }
+          });
+        }
+        
+        // If still no geometry, create a fallback plane with texture
+        if (!geometry) {
+          console.warn(`[TerrainGenerator] No mesh geometry found in ${tilePath}, creating fallback plane`);
+          geometry = new THREE.PlaneGeometry(2, 2);
+          geometry.rotateX(-Math.PI / 2);  // Make it horizontal
+          material = new THREE.MeshStandardMaterial({ 
+            color: 0x888888,
+            roughness: 0.7,
+            metalness: 0.1
+          });
+        }
         
         if (geometry && material) {
           this.tileGeometries.set(tilePath, geometry);

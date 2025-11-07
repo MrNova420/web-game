@@ -222,8 +222,9 @@
 <body>
     <div id="game-menu">
         <!-- Background video that plays on Play button click -->
-        <video id="menu-video" preload="metadata" muted playsinline style="pointer-events: none;" poster="">
+        <video id="menu-video" preload="auto" muted playsinline loop webkit-playsinline x-webkit-airplay="allow" style="pointer-events: none;">
             <source src="/mainmenubackgroundvideo.mp4" type="video/mp4">
+            Your browser does not support the video tag.
         </video>
         <div class="menu-container">
             <h1 class="game-title">YOUR GAME</h1>
@@ -435,30 +436,32 @@
             
             // After menu fades out, start video and begin background game loading
             setTimeout(() => {
-                // Reset video to beginning before playing
+                // Reset video to beginning and ensure it's loaded
                 video.currentTime = 0;
-                
-                // Ensure video is high quality
                 video.setAttribute('preload', 'auto');
-                video.load(); // Force reload to ensure full quality
                 
-                // Unmute and play the video
+                // Unmute for playback
                 video.muted = false;
                 video.volume = 1.0; // Full volume
-                video.playbackRate = 1.0; // Normal speed, no rushing
+                video.playbackRate = 1.0; // Normal speed
                 
-                video.play().then(() => {
-                    console.log('Video animation started - game loading in background');
-                    // Trigger game loading in background while video plays
-                    preloadGameInBackground();
-                }).catch(err => {
-                    console.log('Video play failed:', err);
-                    // If video fails, proceed directly to game
-                    startGameAfterVideo();
-                });
-                
-                // When video ACTUALLY ends, start the game (no timeout fallback)
+                // Set up ended event BEFORE playing
                 video.addEventListener('ended', startGameAfterVideo, { once: true });
+                
+                // Play the video (don't call load() as it interrupts playback)
+                const playPromise = video.play();
+                
+                if (playPromise !== undefined) {
+                    playPromise.then(() => {
+                        console.log('Video animation started - game loading in background');
+                        // Trigger game loading in background while video plays
+                        preloadGameInBackground();
+                    }).catch(err => {
+                        console.log('Video play failed:', err);
+                        // If video fails, proceed directly to game
+                        startGameAfterVideo();
+                    });
+                }
                 
                 console.log('Video will play fully before starting game - smooth transition');
             }, 500); // Wait for menu fade out
