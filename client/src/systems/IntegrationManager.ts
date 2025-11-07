@@ -82,8 +82,10 @@ export class IntegrationManager {
   private frameCount = 0;
   private lowFrequencySystems = new Set([
     'save', 'achievements', 'tutorial', 'minimap', 'weather', 
-    'dungeon', 'environment', 'assetPool', 'performance'
+    'dungeon', 'environment', 'assetPool'
   ]);
+  // Skip performance in general update - it's updated separately with renderer/scene
+  private skipInGeneralUpdate = new Set(['performance']);
   
   public updateAll(deltaTime: number): void {
     if (this.disposed) return;
@@ -91,6 +93,11 @@ export class IntegrationManager {
     this.frameCount++;
     
     for (const systemName of this.updateOrder) {
+      // Skip systems that need special handling
+      if (this.skipInGeneralUpdate.has(systemName)) {
+        continue;
+      }
+      
       const system = this.systems.get(systemName);
       if (system && typeof system.update === 'function') {
         try {
