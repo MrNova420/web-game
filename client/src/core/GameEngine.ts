@@ -94,15 +94,21 @@ export class GameEngine {
     // Initialize THREE.js with performance settings
     this.scene = new THREE.Scene();
     this.scene.background = new THREE.Color(0x87CEEB); // Sky blue background
-    this.scene.fog = new THREE.Fog(0x87CEEB, 10, settings.viewDistance);
+    
+    // RENDERING FIX: Adjust fog for better depth perception
+    const fogDistance = Math.min(settings.viewDistance, 500); // Cap fog distance
+    this.scene.fog = new THREE.Fog(0x87CEEB, fogDistance * 0.5, fogDistance);
     
     this.camera = new THREE.PerspectiveCamera(
       75,
       window.innerWidth / window.innerHeight,
-      0.1,
-      settings.viewDistance
+      0.1,  // Near plane - keep close for proper depth
+      1000  // Far plane - matches view distance
     );
     this.camera.position.set(0, 20, 30); // Set initial camera position
+    
+    // RENDERING FIX: Update camera projection matrix
+    this.camera.updateProjectionMatrix();
     
     this.renderer = new THREE.WebGLRenderer({ 
       antialias: settings.antialiasing,
@@ -130,15 +136,19 @@ export class GameEngine {
                       Math.min(window.devicePixelRatio, 2);
     this.renderer.setPixelRatio(pixelRatio);
     
-    // PERFORMANCE OPTIMIZATIONS
+    // RENDERING FIX: Enable critical rendering features for proper visibility
     this.renderer.shadowMap.enabled = settings.shadows;
     if (settings.shadows) {
       this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     }
-    this.renderer.outputColorSpace = THREE.SRGBColorSpace;
     
-    // CRITICAL PERFORMANCE FIXES for better FPS
-    this.renderer.sortObjects = false; // Disable automatic sorting (we'll handle it)
+    // RENDERING FIX: Proper color space and tone mapping for realistic visuals
+    this.renderer.outputColorSpace = THREE.SRGBColorSpace;
+    this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    this.renderer.toneMappingExposure = 1.2; // Brighter exposure to fix dark visuals
+    
+    // RENDERING FIX: Enable depth testing to prevent see-through issues
+    this.renderer.sortObjects = true; // Enable sorting for proper transparency
     this.renderer.info.autoReset = false; // Manual reset for better perf tracking
     
     // Remove any existing canvas
@@ -317,16 +327,34 @@ export class GameEngine {
     this.integrationManager.registerSystem('skybox', skybox, []);
     await skybox.loadSkybox('day'); // Load skybox immediately
     
-    // Create lights for day/night cycle
-    const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+    // LIGHTING FIX: Create stronger lights for better visibility
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 1.5); // Increased intensity
     directionalLight.position.set(50, 100, 50);
-    directionalLight.castShadow = true;
+    directionalLight.castShadow = settings.shadows;
+    
+    // LIGHTING FIX: Configure shadow properties for better quality
+    if (settings.shadows) {
+      directionalLight.shadow.mapSize.width = 2048;
+      directionalLight.shadow.mapSize.height = 2048;
+      directionalLight.shadow.camera.near = 0.5;
+      directionalLight.shadow.camera.far = 500;
+      directionalLight.shadow.camera.left = -100;
+      directionalLight.shadow.camera.right = 100;
+      directionalLight.shadow.camera.top = 100;
+      directionalLight.shadow.camera.bottom = -100;
+    }
+    
     this.scene.add(directionalLight);
     
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+    // LIGHTING FIX: Stronger ambient light to eliminate dark areas
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.8); // Increased from 0.5
     this.scene.add(ambientLight);
     
-    console.log('[GameEngine] Lights added to scene');
+    // LIGHTING FIX: Add hemisphere light for better sky/ground lighting
+    const hemisphereLight = new THREE.HemisphereLight(0x87CEEB, 0x3a9d23, 0.6);
+    this.scene.add(hemisphereLight);
+    
+    console.log('[GameEngine] Enhanced lighting system added to scene');
     
     // Day/Night Cycle - pass lights and skybox
     const dayNight = new DayNightCycle(directionalLight, ambientLight, skybox);
@@ -544,7 +572,7 @@ export class GameEngine {
   
   /**
    * Render the scene
-   * PERFORMANCE OPTIMIZATIONS: Frustum culling, selective rendering
+   * RENDERING FIX: Proper frustum culling and camera updates
    */
   private renderCount = 0;
   
@@ -562,9 +590,10 @@ export class GameEngine {
       this.renderer.info.reset();
     }
     
-    // PERFORMANCE FIX: Apply frustum culling manually for better control
-    // Three.js does this automatically, but we can optimize by pre-filtering
+    // RENDERING FIX: Update camera matrices for proper frustum culling
+    this.camera.updateMatrix();
     this.camera.updateMatrixWorld();
+    this.camera.updateProjectionMatrix();
     
     this.renderer.render(this.scene, this.camera);
   }

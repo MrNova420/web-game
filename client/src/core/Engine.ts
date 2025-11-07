@@ -52,6 +52,13 @@ export class Engine {
     this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
     this.renderer.setSize(window.innerWidth, window.innerHeight);
     this.renderer.setPixelRatio(window.devicePixelRatio);
+    
+    // RENDERING FIX: Enable proper rendering settings for visibility
+    this.renderer.shadowMap.enabled = true;
+    this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    this.renderer.outputColorSpace = THREE.SRGBColorSpace;
+    this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    this.renderer.toneMappingExposure = 1.2; // Brighter for better visibility
 
     this.clock = new THREE.Clock();
 
@@ -102,12 +109,30 @@ export class Engine {
   }
 
   private setupLighting() {
-    this.ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+    // LIGHTING FIX: Stronger ambient light to eliminate dark areas
+    this.ambientLight = new THREE.AmbientLight(0xffffff, 0.8); // Increased from 0.5
     this.scene.add(this.ambientLight);
 
-    this.directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+    // LIGHTING FIX: Stronger directional light for better visibility
+    this.directionalLight = new THREE.DirectionalLight(0xffffff, 1.5); // Increased from 0.8
     this.directionalLight.position.set(5, 10, 5);
+    this.directionalLight.castShadow = true;
+    
+    // LIGHTING FIX: Configure shadow properties
+    this.directionalLight.shadow.mapSize.width = 2048;
+    this.directionalLight.shadow.mapSize.height = 2048;
+    this.directionalLight.shadow.camera.near = 0.5;
+    this.directionalLight.shadow.camera.far = 500;
+    this.directionalLight.shadow.camera.left = -50;
+    this.directionalLight.shadow.camera.right = 50;
+    this.directionalLight.shadow.camera.top = 50;
+    this.directionalLight.shadow.camera.bottom = -50;
+    
     this.scene.add(this.directionalLight);
+    
+    // LIGHTING FIX: Add hemisphere light for better sky/ground lighting
+    const hemisphereLight = new THREE.HemisphereLight(0x87CEEB, 0x3a9d23, 0.6);
+    this.scene.add(hemisphereLight);
   }
 
   private onResize() {

@@ -71,6 +71,18 @@ export class VegetationManager {
           if (child instanceof THREE.Mesh && !geometry) {
             geometry = child.geometry.clone();
             material = child.material instanceof Array ? child.material[0].clone() : child.material.clone();
+            
+            // RENDERING FIX: Ensure geometry has normals
+            if (!geometry.attributes.normal) {
+              geometry.computeVertexNormals();
+            }
+            
+            // RENDERING FIX: Configure material for proper visibility
+            if (material instanceof THREE.MeshStandardMaterial || material instanceof THREE.MeshPhysicalMaterial) {
+              material.side = THREE.DoubleSide; // Fix see-through issues
+              material.flatShading = false; // Smooth shading
+              material.needsUpdate = true;
+            }
           }
         });
         

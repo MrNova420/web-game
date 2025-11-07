@@ -30,26 +30,32 @@ export class SkyboxManager {
     const skyboxPath = this.skyboxes[type];
     
     try {
-      // FIX: Properly load skybox texture with error handling
+      // RENDERING FIX: Properly load skybox texture with error handling
       const texture = await this.textureLoader.loadAsync(skyboxPath);
       texture.colorSpace = THREE.SRGBColorSpace;
+      texture.minFilter = THREE.LinearFilter;
+      texture.magFilter = THREE.LinearFilter;
       
       // Create a large sphere for the skybox
-      const geometry = new THREE.SphereGeometry(500, 32, 32);
+      const geometry = new THREE.SphereGeometry(900, 60, 40); // Larger and smoother
       const material = new THREE.MeshBasicMaterial({
         map: texture,
         side: THREE.BackSide, // Render inside of sphere
-        depthWrite: false
+        depthWrite: false,
+        fog: false // Skybox should not be affected by fog
       });
 
       this.currentSkybox = new THREE.Mesh(geometry, material);
       this.currentSkybox.renderOrder = -1; // Render skybox first
+      this.currentSkybox.frustumCulled = false; // Never cull skybox
+      this.currentSkybox.name = `skybox_${type}`;
       this.scene.add(this.currentSkybox);
       
-      console.log(`[SkyboxManager] Skybox loaded successfully: ${type}`);
+      console.log(`[SkyboxManager] Skybox loaded successfully: ${type} (radius: 900)`);
     } catch (error) {
       console.warn(`[SkyboxManager] Failed to load skybox: ${type}`, error);
-      // Don't fail if skybox doesn't load - scene background will show
+      // Fallback: Use scene background color
+      this.scene.background = new THREE.Color(0x87CEEB); // Sky blue
     }
   }
 
