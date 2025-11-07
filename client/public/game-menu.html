@@ -440,6 +440,10 @@
                 video.currentTime = 0;
                 video.setAttribute('preload', 'auto');
                 
+                // Remove loop attribute so video plays only once
+                video.removeAttribute('loop');
+                video.loop = false;
+                
                 // Unmute for playback
                 video.muted = false;
                 video.volume = 1.0; // Full volume
