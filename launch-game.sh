@@ -72,9 +72,8 @@ if [ "$MODE" = "dev" ]; then
     
     # Start server in background
     cd server
-    # Ensure /tmp directory exists and server.log can be written
-    touch /tmp/server.log 2>/dev/null || true
-    npm run dev > /tmp/server.log 2>&1 &
+    # Use local log file instead of /tmp to avoid permission issues
+    npm run dev > ../server.log 2>&1 &
     SERVER_PID=$!
     echo -e "${GREEN}✓ Server started (PID: $SERVER_PID)${NC}"
     

@@ -42,14 +42,18 @@ export class SettingsSystem {
   private readonly SETTINGS_KEY = 'fantasy_mmo_settings';
 
   constructor() {
+    // Always start with defaults to ensure valid settings
     this.settings = this.getDefaultSettings();
+    console.log('SettingsSystem: Default settings loaded');
+    
+    // Try to load saved settings
     const loaded = this.load();
     if (!loaded) {
-      // If no settings found, save defaults
+      // If no settings found, save defaults for next time
       this.save();
-      console.log('SettingsSystem initialized with default settings');
+      console.log('SettingsSystem: Initialized with default settings (saved for future use)');
     } else {
-      console.log('SettingsSystem initialized with saved settings');
+      console.log('SettingsSystem: Loaded saved settings from localStorage');
     }
   }
 

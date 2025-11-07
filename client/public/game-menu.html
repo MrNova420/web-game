@@ -36,6 +36,7 @@
             width: 100%;
             height: 100%;
             object-fit: cover;
+            object-position: center center;
             z-index: 1;
             /* Force high quality rendering */
             image-rendering: -webkit-optimize-contrast;
@@ -44,6 +45,9 @@
             -webkit-backface-visibility: hidden;
             transform: translateZ(0);
             -webkit-transform: translateZ(0);
+            /* Ensure video fills entire viewport */
+            min-width: 100%;
+            min-height: 100%;
         }
             background-size: cover;
             background-position: center;
@@ -76,6 +80,10 @@
             #menu-video {
                 height: -webkit-fill-available;
                 min-height: 100vh;
+                min-height: -webkit-fill-available;
+                /* Cover entire screen on iOS */
+                width: 100vw;
+                max-width: none;
             }
         }
         
@@ -105,7 +113,11 @@
             #menu-video {
                 min-height: 100vh;
                 min-height: -webkit-fill-available;
+                min-width: 100vw;
                 object-position: center center;
+                /* Force cover to fill screen completely */
+                width: 100vw;
+                height: 100vh;
             }
         }
 
