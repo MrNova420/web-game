@@ -187,11 +187,18 @@ export class GraphicsQualityManager {
     return { ...this.qualitySettings[this.currentQuality] };
   }
   
+  // FPS limits
+  private static readonly MIN_TARGET_FPS = 30;
+  private static readonly MAX_TARGET_FPS = 144;
+  
   /**
    * Set target FPS for auto-adjustment
    */
   public setTargetFPS(fps: number): void {
-    this.targetFPS = Math.max(30, Math.min(144, fps));
+    this.targetFPS = Math.max(
+      GraphicsQualityManager.MIN_TARGET_FPS, 
+      Math.min(GraphicsQualityManager.MAX_TARGET_FPS, fps)
+    );
     console.log(`[GraphicsQualityManager] Target FPS set to ${this.targetFPS}`);
   }
   

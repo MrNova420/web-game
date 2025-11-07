@@ -22,7 +22,7 @@ export class PostProcessingManager {
     renderer: THREE.WebGLRenderer,
     scene: THREE.Scene,
     camera: THREE.PerspectiveCamera,
-    quality: 'low' | 'medium' | 'high' | 'ultra' = 'high'
+    quality: 'low' | 'medium' | 'high' | 'ultra' = 'high' // Optional with default for backward compatibility
   ) {
     this.quality = quality;
     
@@ -62,8 +62,11 @@ export class PostProcessingManager {
     if (quality !== 'low') {
       this.fxaaPass = new ShaderPass(FXAAShader);
       const pixelRatio = renderer.getPixelRatio();
-      this.fxaaPass.material.uniforms['resolution'].value.x = 1 / (window.innerWidth * pixelRatio);
-      this.fxaaPass.material.uniforms['resolution'].value.y = 1 / (window.innerHeight * pixelRatio);
+      const resolutionUniform = this.fxaaPass.material.uniforms['resolution'];
+      if (resolutionUniform) {
+        resolutionUniform.value.x = 1 / (window.innerWidth * pixelRatio);
+        resolutionUniform.value.y = 1 / (window.innerHeight * pixelRatio);
+      }
       this.composer.addPass(this.fxaaPass);
       
       console.log('[PostProcessing] FXAA anti-aliasing enabled');
@@ -97,8 +100,11 @@ export class PostProcessingManager {
     
     if (this.fxaaPass) {
       const pixelRatio = this.composer.renderer.getPixelRatio();
-      this.fxaaPass.material.uniforms['resolution'].value.x = 1 / (width * pixelRatio);
-      this.fxaaPass.material.uniforms['resolution'].value.y = 1 / (height * pixelRatio);
+      const resolutionUniform = this.fxaaPass.material.uniforms['resolution'];
+      if (resolutionUniform) {
+        resolutionUniform.value.x = 1 / (width * pixelRatio);
+        resolutionUniform.value.y = 1 / (height * pixelRatio);
+      }
     }
   }
 

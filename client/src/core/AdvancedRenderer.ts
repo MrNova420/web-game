@@ -119,10 +119,9 @@ export class AdvancedRenderer {
   }
   
   private setupMaterialDefaults(): void {
-    // Set global material defaults for better rendering
-    THREE.Material.prototype.side = THREE.FrontSide; // Default to front side for performance
-    
-    console.log('[AdvancedRenderer] Material defaults configured');
+    // Note: Setting global defaults on prototype is avoided to prevent side effects
+    // Instead, material properties are set on individual instances in applyMaterialFixes()
+    console.log('[AdvancedRenderer] Material defaults will be applied per instance');
   }
   
   /**
@@ -188,6 +187,9 @@ export class AdvancedRenderer {
               roughness: 0.7,
               metalness: 0.2
             });
+            
+            // Dispose old material to prevent memory leak
+            mat.dispose();
             
             const idx = materials.indexOf(mat);
             if (Array.isArray(child.material)) {

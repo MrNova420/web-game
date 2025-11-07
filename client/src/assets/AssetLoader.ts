@@ -84,6 +84,10 @@ export class AssetLoader {
                   roughness: 0.7,
                   metalness: 0.2
                 });
+                
+                // Dispose old material to prevent memory leak
+                mat.dispose();
+                
                 if (Array.isArray(child.material)) {
                   const idx = child.material.indexOf(mat);
                   if (idx >= 0) child.material[idx] = standardMat;

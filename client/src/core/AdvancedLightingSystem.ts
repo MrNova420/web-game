@@ -82,6 +82,9 @@ export class AdvancedLightingSystem {
     console.log(`[AdvancedLightingSystem] ${this.fillLights.length} fill lights added`);
   }
   
+  // Constants for sun position calculation
+  private static readonly MIN_SUN_HEIGHT = 10; // Minimum sun height above horizon
+  
   /**
    * Update lighting based on time of day
    */
@@ -95,7 +98,7 @@ export class AdvancedLightingSystem {
     
     this.sunLight.position.set(
       Math.cos(sunAngle) * sunDistance,
-      Math.max(sunHeight * sunDistance, 10), // Never go below horizon
+      Math.max(sunHeight * sunDistance, AdvancedLightingSystem.MIN_SUN_HEIGHT), // Never go below horizon
       Math.sin(sunAngle) * sunDistance * 0.5
     );
     
