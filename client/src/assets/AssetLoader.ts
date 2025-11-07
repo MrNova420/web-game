@@ -21,6 +21,30 @@ export class AssetLoader {
     if (extension === 'gltf' || extension === 'glb') {
       const gltf = await this.gltfLoader.loadAsync(path);
       model = gltf.scene;
+      
+      // RENDERING FIX: Ensure GLTF materials are properly configured
+      model.traverse((child) => {
+        if (child instanceof THREE.Mesh) {
+          // Ensure materials have proper rendering settings
+          const materials = Array.isArray(child.material) ? child.material : [child.material];
+          materials.forEach(mat => {
+            if (mat) {
+              // Fix see-through issues with double-sided rendering
+              mat.side = THREE.DoubleSide;
+              mat.needsUpdate = true;
+            }
+          });
+          
+          // Enable shadows
+          child.castShadow = true;
+          child.receiveShadow = true;
+          
+          // Ensure normals exist
+          if (child.geometry && !child.geometry.attributes.normal) {
+            child.geometry.computeVertexNormals();
+          }
+        }
+      });
     } else if (extension === 'obj') {
       // Try to load MTL file if it exists
       const mtlPath = path.replace('.obj', '.mtl');
@@ -35,14 +59,53 @@ export class AssetLoader {
       
       model = await this.objLoader.loadAsync(path);
       
-      // If no materials loaded, apply a default material
+      // RENDERING FIX: Apply proper default materials to all meshes
       model.traverse((child) => {
-        if (child instanceof THREE.Mesh && !child.material) {
-          child.material = new THREE.MeshStandardMaterial({ 
-            color: 0x888888,
-            roughness: 0.8,
-            metalness: 0.2
-          });
+        if (child instanceof THREE.Mesh) {
+          // If mesh has no material or invalid material, apply default
+          if (!child.material || (Array.isArray(child.material) && child.material.length === 0)) {
+            child.material = new THREE.MeshStandardMaterial({ 
+              color: 0x888888,
+              roughness: 0.7,
+              metalness: 0.2,
+              side: THREE.DoubleSide, // Fix see-through issues
+              flatShading: false
+            });
+          } else {
+            // RENDERING FIX: Ensure existing materials are properly configured
+            const materials = Array.isArray(child.material) ? child.material : [child.material];
+            materials.forEach(mat => {
+              if (mat instanceof THREE.MeshBasicMaterial || mat instanceof THREE.MeshLambertMaterial) {
+                // Convert basic materials to standard for better lighting
+                const standardMat = new THREE.MeshStandardMaterial({
+                  color: mat.color,
+                  map: mat.map,
+                  side: THREE.DoubleSide, // Fix see-through issues
+                  roughness: 0.7,
+                  metalness: 0.2
+                });
+                if (Array.isArray(child.material)) {
+                  const idx = child.material.indexOf(mat);
+                  if (idx >= 0) child.material[idx] = standardMat;
+                } else {
+                  child.material = standardMat;
+                }
+              } else if (mat instanceof THREE.MeshStandardMaterial || mat instanceof THREE.MeshPhysicalMaterial) {
+                // Ensure double-sided rendering to fix see-through issues
+                mat.side = THREE.DoubleSide;
+                mat.needsUpdate = true;
+              }
+            });
+          }
+          
+          // RENDERING FIX: Enable shadow casting and receiving
+          child.castShadow = true;
+          child.receiveShadow = true;
+          
+          // RENDERING FIX: Ensure geometry has proper normals
+          if (child.geometry && !child.geometry.attributes.normal) {
+            child.geometry.computeVertexNormals();
+          }
         }
       });
     } else {

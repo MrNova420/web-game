@@ -185,11 +185,24 @@ export class RealAssetTerrainGenerator {
           material = new THREE.MeshStandardMaterial({ 
             color: 0x888888,
             roughness: 0.7,
-            metalness: 0.1
+            metalness: 0.1,
+            side: THREE.DoubleSide // RENDERING FIX: Prevent see-through issues
           });
         }
         
         if (geometry && material) {
+          // RENDERING FIX: Ensure geometry has proper normals for lighting
+          if (!geometry.attributes.normal) {
+            geometry.computeVertexNormals();
+          }
+          
+          // RENDERING FIX: Ensure material is double-sided and properly configured
+          if (material instanceof THREE.MeshStandardMaterial || material instanceof THREE.MeshPhysicalMaterial) {
+            material.side = THREE.DoubleSide; // Fix see-through issues
+            material.flatShading = false; // Smooth shading for better visuals
+            material.needsUpdate = true;
+          }
+          
           this.tileGeometries.set(tilePath, geometry);
           this.tileMaterials.set(tilePath, material);
           
@@ -197,12 +210,20 @@ export class RealAssetTerrainGenerator {
             // GPU MODE: Create instanced mesh with capacity for many instances
             const maxInstances = 30000;
             const instancedMesh = new THREE.InstancedMesh(geometry, material, maxInstances);
+            
+            // RENDERING FIX: Configure instanced mesh for proper visibility
             instancedMesh.castShadow = true;
             instancedMesh.receiveShadow = true;
             instancedMesh.count = 0;  // Start at 0, will be incremented as tiles are placed
             instancedMesh.visible = true;  // Explicitly set visible
             instancedMesh.frustumCulled = true;  // Enable frustum culling for performance
             instancedMesh.name = `terrain_instanced_${tilePath.split('/').pop()}`;
+            
+            // RENDERING FIX: Ensure the material is properly configured
+            if (material instanceof THREE.MeshStandardMaterial || material instanceof THREE.MeshPhysicalMaterial) {
+              material.side = THREE.DoubleSide;
+              material.needsUpdate = true;
+            }
             
             scene.add(instancedMesh);
             this.instancedMeshes.set(tilePath, instancedMesh);
