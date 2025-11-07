@@ -534,7 +534,8 @@ export class GameEngine {
     // Update all systems through integration manager
     this.integrationManager.updateAll(deltaTime);
     
-    // CRITICAL FIX: Update performance monitor with renderer and scene separately
+    // Update performance monitor separately to provide renderer and scene references
+    // This allows accurate tracking of draw calls, triangles, and scene entities
     const perfMonitor = this.integrationManager.getSystem<PerformanceMonitor>('performance');
     if (perfMonitor) {
       perfMonitor.update(deltaTime, this.renderer, this.scene);

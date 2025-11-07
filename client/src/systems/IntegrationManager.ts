@@ -78,13 +78,13 @@ export class IntegrationManager {
   /**
    * Update all systems in order
    * PERFORMANCE FIX: Throttle non-critical systems to reduce frame load
+   * Note: Performance monitor is updated separately in GameEngine with renderer/scene
    */
   private frameCount = 0;
   private lowFrequencySystems = new Set([
     'save', 'achievements', 'tutorial', 'minimap', 'weather', 
     'dungeon', 'environment', 'assetPool'
   ]);
-  // Skip performance in general update - it's updated separately with renderer/scene
   private skipInGeneralUpdate = new Set(['performance']);
   
   public updateAll(deltaTime: number): void {

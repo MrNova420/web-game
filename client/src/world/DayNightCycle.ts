@@ -7,7 +7,9 @@ export class DayNightCycle {
   private directionalLight: THREE.DirectionalLight;
   private ambientLight: THREE.AmbientLight;
   private skyboxManager: SkyboxManager;
-  private lastSkyboxHour: number = -1; // Track last skybox update to prevent excessive loading
+  // Track last skybox update hour to prevent loading on every frame when hour % 6 === 0
+  // Initialize to -1 so first update at hour 0, 6, 12, or 18 will trigger
+  private lastSkyboxHour: number = -1;
 
   constructor(
     directionalLight: THREE.DirectionalLight,
