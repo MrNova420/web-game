@@ -135,12 +135,6 @@ export class TAAPass extends ShaderPass {
     // Restore original render target
     renderer.setRenderTarget(currentRenderTarget);
   }
-    // Clean up temporary mesh
-    quad.geometry.dispose();
-    if (quad.material instanceof THREE.Material) {
-      quad.material.dispose();
-    }
-  }
   
   public setSize(width: number, height: number): void {
     this.historyTexture.setSize(width, height);
