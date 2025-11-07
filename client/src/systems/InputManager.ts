@@ -29,6 +29,10 @@ export class InputManager {
   private touchCameraActive = false;
   private touchCameraLast = { x: 0, y: 0 };
   
+  // Touch joystick configuration
+  private readonly TOUCH_JOYSTICK_MAX_DISTANCE = 100; // Maximum joystick distance in pixels
+  private readonly TOUCH_JOYSTICK_DEADZONE = 10; // Minimum distance before registering input
+  
   private keyBindings: KeyBinding[] = [
     { action: 'move_forward', key: 'w', description: 'Move Forward' },
     { action: 'move_backward', key: 's', description: 'Move Backward' },
@@ -129,12 +133,10 @@ export class InputManager {
           const dz = touchPos.y - this.touchJoystickStart.y;
           
           // Normalize to -1 to 1 range (with deadzone)
-          const maxDistance = 100;
-          const deadzone = 10;
           const distance = Math.sqrt(dx * dx + dz * dz);
           
-          if (distance > deadzone) {
-            const normalizedDistance = Math.min(distance, maxDistance) / maxDistance;
+          if (distance > this.TOUCH_JOYSTICK_DEADZONE) {
+            const normalizedDistance = Math.min(distance, this.TOUCH_JOYSTICK_MAX_DISTANCE) / this.TOUCH_JOYSTICK_MAX_DISTANCE;
             this.touchMovement.x = (dx / distance) * normalizedDistance;
             this.touchMovement.z = (dz / distance) * normalizedDistance;
           } else {
@@ -303,17 +305,19 @@ export class InputManager {
     if (this.isActionPressed('move_left')) x -= 1;
     if (this.isActionPressed('move_right')) x += 1;
 
-    // Touch joystick input (overrides keyboard if active)
+    // Touch joystick input (combines with keyboard if both active)
     if (this.isMobileDevice && this.touchJoystickActive) {
-      x = this.touchMovement.x;
-      z = this.touchMovement.z;
+      x += this.touchMovement.x;
+      z += this.touchMovement.z;
     }
 
-    // Normalize diagonal movement
-    if (x !== 0 && z !== 0) {
+    // Normalize combined movement (may exceed 1.0 if both touch and keyboard active)
+    if (x !== 0 || z !== 0) {
       const length = Math.sqrt(x * x + z * z);
-      x /= length;
-      z /= length;
+      if (length > 1) {
+        x /= length;
+        z /= length;
+      }
     }
 
     return { x, z };
