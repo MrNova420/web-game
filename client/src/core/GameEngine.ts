@@ -240,7 +240,7 @@ export class GameEngine {
       
       updateProgress(100, 'All systems ready!');
       
-      console.log('[GameEngine] ✓ All 39 systems initialized successfully!');
+      console.log('[GameEngine] ✓ All 35 game systems initialized successfully!');
       console.log('[GameEngine] ✓ Player controls ready!');
       console.log('[GameEngine] Game is ready to start!');
       
@@ -252,6 +252,7 @@ export class GameEngine {
       console.log('[GameEngine] ✓ Performance: 12 draw calls (GPU instancing)');
       console.log('[GameEngine] ✓ Mobile: GPU instancing enabled by default');
       console.log('[GameEngine] ✓ Cache: Version 1.1.0 with automatic updates');
+      console.log('[GameEngine] ✓ Systems: 35 integrated (28 game + 7 world systems)');
       console.log('[GameEngine] === ALL SYSTEMS READY FOR PLAY ===');
       
     } catch (error) {
