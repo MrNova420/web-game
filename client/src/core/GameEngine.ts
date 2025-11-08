@@ -240,19 +240,19 @@ export class GameEngine {
       
       updateProgress(100, 'All systems ready!');
       
-      console.log('[GameEngine] ✓ All 35 game systems initialized successfully!');
+      console.log('[GameEngine] ✓ All 54 game systems initialized successfully!');
       console.log('[GameEngine] ✓ Player controls ready!');
       console.log('[GameEngine] Game is ready to start!');
       
       // INTEGRATION VERIFICATION: Log all initialized systems
       console.log('[GameEngine] === SYSTEM INTEGRATION STATUS ===');
+      console.log('[GameEngine] ✓ Systems: 54 total (28 gameplay + 16 world + 10 core)');
       console.log('[GameEngine] ✓ Terrain: RealAssetTerrainGenerator with GPU instancing');
       console.log('[GameEngine] ✓ Assets: GLTF format, PBR materials, proper textures');
       console.log('[GameEngine] ✓ Rendering: MeshStandardMaterial, proper lighting');
       console.log('[GameEngine] ✓ Performance: 12 draw calls (GPU instancing)');
       console.log('[GameEngine] ✓ Mobile: GPU instancing enabled by default');
       console.log('[GameEngine] ✓ Cache: Version 1.1.0 with automatic updates');
-      console.log('[GameEngine] ✓ Systems: 35 integrated (28 game + 7 world systems)');
       console.log('[GameEngine] === ALL SYSTEMS READY FOR PLAY ===');
       
     } catch (error) {
