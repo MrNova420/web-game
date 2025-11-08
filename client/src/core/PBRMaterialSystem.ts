@@ -3,10 +3,26 @@ import * as THREE from 'three';
 /**
  * PBR Material System - Physically Based Rendering
  * Enhances materials with realistic PBR properties using metallic/roughness workflow
+ * ENHANCEMENT: Following AUTONOMOUS_DEVELOPMENT_GUIDE2.MD Section 2.1
  */
 export class PBRMaterialSystem {
   private textureLoader: THREE.TextureLoader;
   private cache = new Map<string, THREE.Texture>();
+  private materialCache = new Map<string, THREE.Material>();
+  
+  // ENHANCEMENT: Expanded material library for more asset types
+  private materialDefinitions = {
+    stone: { roughness: 0.9, metalness: 0.1, color: 0x808080 },
+    wood: { roughness: 0.8, metalness: 0.0, color: 0x8B4513 },
+    metal: { roughness: 0.3, metalness: 0.9, color: 0xC0C0C0 },
+    grass: { roughness: 0.9, metalness: 0.0, color: 0x3a9d23 },
+    dirt: { roughness: 0.95, metalness: 0.0, color: 0x8b7355 },
+    sand: { roughness: 0.85, metalness: 0.0, color: 0xf4e4c1 },
+    leather: { roughness: 0.7, metalness: 0.0, color: 0x8b5a2b },
+    fabric: { roughness: 0.9, metalness: 0.0, color: 0xeeeeee },
+    foliage: { roughness: 0.85, metalness: 0.0, color: 0x4a7c3e },
+    water: { roughness: 0.05, metalness: 0.0, color: 0x4488bb }
+  };
   
   // PBR texture paths for different material types
   private pbrTexturePaths = {
@@ -36,7 +52,8 @@ export class PBRMaterialSystem {
   
   constructor() {
     this.textureLoader = new THREE.TextureLoader();
-    console.log('[PBRMaterialSystem] Physically Based Rendering system initialized');
+    console.log('[PBRMaterialSystem] Enhanced Physically Based Rendering system initialized');
+    console.log('[PBRMaterialSystem] Material types available:', Object.keys(this.materialDefinitions).join(', '));
   }
   
   /**
@@ -167,6 +184,31 @@ export class PBRMaterialSystem {
   }
   
   /**
+   * ENHANCEMENT: Create simple PBR material from definition (no textures)
+   */
+  public createSimplePBRMaterial(
+    type: keyof typeof this.materialDefinitions
+  ): THREE.MeshStandardMaterial {
+    // Check cache first
+    const cacheKey = `simple_${type}`;
+    if (this.materialCache.has(cacheKey)) {
+      return (this.materialCache.get(cacheKey) as THREE.MeshStandardMaterial).clone();
+    }
+    
+    const def = this.materialDefinitions[type] || this.materialDefinitions.stone;
+    const material = new THREE.MeshStandardMaterial({
+      color: def.color,
+      roughness: def.roughness,
+      metalness: def.metalness,
+      envMapIntensity: 1.0,
+    });
+    
+    this.materialCache.set(cacheKey, material);
+    console.log(`[PBRMaterialSystem] Created simple PBR material: ${type}`);
+    return material.clone();
+  }
+  
+  /**
    * Apply PBR material to object and all children
    */
   public async applyPBRToObject(
@@ -190,6 +232,32 @@ export class PBRMaterialSystem {
     });
     
     console.log(`[PBRMaterialSystem] Applied PBR material (${materialType}) to object`);
+  }
+  
+  /**
+   * ENHANCEMENT: Apply simple PBR (no textures) to object
+   */
+  public applySimplePBRToObject(
+    object: THREE.Object3D,
+    materialType: keyof typeof this.materialDefinitions = 'stone'
+  ): void {
+    const pbrMaterial = this.createSimplePBRMaterial(materialType);
+    
+    object.traverse((child) => {
+      if (child instanceof THREE.Mesh) {
+        // Keep existing color if available
+        if (child.material instanceof THREE.MeshStandardMaterial) {
+          const existingColor = child.material.color.clone();
+          pbrMaterial.color.copy(existingColor);
+        }
+        
+        child.material = pbrMaterial;
+        child.castShadow = true;
+        child.receiveShadow = true;
+      }
+    });
+    
+    console.log(`[PBRMaterialSystem] Applied simple PBR material (${materialType}) to object`);
   }
   
   /**

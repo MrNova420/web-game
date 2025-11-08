@@ -40,6 +40,7 @@ import { LODManager } from '../systems/LODManager';
 import { DungeonSystem } from '../systems/DungeonSystem';
 import { PerformanceOptimizer } from '../utils/PerformanceOptimizer';
 import { PlayerController } from './PlayerController';
+import { FastTrackWorldComplete } from '../world/FastTrackWorldComplete';
 
 // Type for progress callback
 type ProgressCallback = (progress: number, message: string) => void;
@@ -64,6 +65,9 @@ export class GameEngine {
   
   // World systems for deferred chunk loading
   private chunkManager: ChunkManager | null = null;
+  
+  // AUTONOMOUS DEVELOPMENT: FastTrack World Builder
+  private fastTrackWorldBuilder: FastTrackWorldComplete | null = null;
   
   // Game loop
   private isRunning: boolean = false;
@@ -489,6 +493,43 @@ export class GameEngine {
     
     const achievements = new AchievementSystem();
     this.integrationManager.registerSystem('achievements', achievements, ['playerStats', 'quests']);
+  }
+  
+  /**
+   * AUTONOMOUS DEVELOPMENT: Build complete world using FastTrack system
+   * Following AUTONOMOUS_DEVELOPMENT_GUIDE2.MD Section T
+   */
+  public async buildFastTrackWorld(progressCallback?: ProgressCallback): Promise<void> {
+    console.log('[GameEngine] 🚀 Starting FastTrack World Build...');
+    
+    const updateProgress = (progress: number, message: string) => {
+      if (progressCallback) progressCallback(progress, message);
+    };
+    
+    try {
+      updateProgress(0, 'Initializing world builder...');
+      
+      // Create FastTrack world builder with existing scene/camera/renderer
+      this.fastTrackWorldBuilder = new FastTrackWorldComplete(
+        this.scene,
+        this.camera,
+        this.renderer
+      );
+      
+      updateProgress(10, 'Building world with all 453 assets...');
+      
+      // Build the complete world
+      await this.fastTrackWorldBuilder.buildCompleteWorld();
+      
+      updateProgress(100, 'World ready!');
+      
+      console.log('[GameEngine] ✅ FastTrack World Build Complete!');
+      console.log('[GameEngine] World is now playable with all assets');
+      
+    } catch (error) {
+      console.error('[GameEngine] ❌ FastTrack World Build failed:', error);
+      throw error;
+    }
   }
   
   /**
