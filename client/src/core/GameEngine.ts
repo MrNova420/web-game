@@ -127,7 +127,7 @@ export class GameEngine {
     console.log('[GameEngine] Core initialization complete');
   }
   
-  private setupRenderer(settings: any): void {
+  private setupRenderer(settings: { targetFPS: number; textureQuality: string; shadows: boolean; antialiasing: boolean }): void {
     this.renderer.setSize(window.innerWidth, window.innerHeight);
     
     // Adjust pixel ratio based on device tier
@@ -643,7 +643,7 @@ export class GameEngine {
   /**
    * Get statistics
    */
-  public getStats(): any {
+  public getStats(): { fps: number; deltaTime: number; sceneObjects: number } {
     return {
       fps: Math.round(1 / this.deltaTime),
       deltaTime: this.deltaTime,

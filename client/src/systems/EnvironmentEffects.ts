@@ -13,10 +13,10 @@ export class EnvironmentEffects {
   private windAudio: HTMLAudioElement | null = null;
   
   // Shader effects
-  private composer: any = null; // EffectComposer
-  private aoPass: any = null; // SSAOPass
-  private dofPass: any = null; // DepthOfFieldPass
-  private motionBlurPass: any = null;
+  private composer: unknown = null; // EffectComposer
+  private aoPass: unknown = null; // SSAOPass
+  private dofPass: unknown = null; // DepthOfFieldPass
+  private motionBlurPass: unknown = null;
   
   // Wind system
   private windStrength: number = 0.3;
@@ -116,7 +116,8 @@ export class EnvironmentEffects {
       trackName = 'evening_ambient'; // Transition sounds
     }
     
-    // Would load from: `/extracted_assets/Fantasy_RPG_Music/${trackName}.wav`
+    // Would load from extracted_assets/Fantasy_RPG_Music/${trackName}.wav
+    console.log(`Environment track: ${trackName}`);
     // this.ambientAudio.src = path;
     // this.ambientAudio.play();
   }

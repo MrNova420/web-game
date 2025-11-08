@@ -180,10 +180,10 @@ export class SaveSystem {
   createSaveFromState(
     playerId: string,
     position: { x: number; y: number; z: number },
-    stats: any,
+    stats: Record<string, unknown>,
     inventory: Array<{ itemId: string; count: number }>,
-    quests: any[],
-    settings: any
+    quests: unknown[],
+    settings: Record<string, unknown>
   ): SaveData {
     return {
       version: this.SAVE_VERSION,
@@ -264,7 +264,7 @@ export class SaveSystem {
         level: data.player.stats.level,
         playtime: 0 // Could track this in save data
       };
-    } catch (_error) {
+    } catch {
       return null;
     }
   }
@@ -279,7 +279,7 @@ export class SaveSystem {
       const total = 5 * 1024 * 1024; // 5MB typical localStorage limit
       
       return { used, total };
-    } catch (_error) {
+    } catch {
       return { used: 0, total: 0 };
     }
   }

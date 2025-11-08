@@ -44,14 +44,14 @@ const mockWebGLContext = {
 // Mock HTMLCanvasElement.getContext for WebGL
 HTMLCanvasElement.prototype.getContext = function(contextType: string) {
   if (contextType === 'webgl' || contextType === 'webgl2' || contextType === 'experimental-webgl') {
-    return mockWebGLContext as any;
+    return mockWebGLContext as unknown as WebGLRenderingContext;
   }
   return null;
 };
 
 // Mock window.requestAnimationFrame
 global.requestAnimationFrame = (callback: FrameRequestCallback) => {
-  return setTimeout(() => callback(Date.now()), 16) as any;
+  return setTimeout(() => callback(Date.now()), 16) as unknown as number;
 };
 
 global.cancelAnimationFrame = (id: number) => {

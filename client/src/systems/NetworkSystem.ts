@@ -37,7 +37,7 @@ export enum MessageType {
  */
 export interface NetworkMessage {
   type: MessageType;
-  data: any;
+  data: unknown;
   timestamp: number;
   senderId?: string;
 }

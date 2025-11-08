@@ -293,7 +293,7 @@ export class AchievementSystem {
   /**
    * Check for achievements
    */
-  checkAchievements(playerId: string, eventType: string, eventData: any): Achievement[] {
+  checkAchievements(playerId: string, eventType: string, eventData: { enemyType?: string; itemType?: string; amount?: number; newLevel?: number }): Achievement[] {
     const unlockedAchievements: Achievement[] = [];
 
     switch (eventType) {

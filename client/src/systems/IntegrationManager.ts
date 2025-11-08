@@ -3,7 +3,7 @@
  * Central hub for system lifecycle and inter-system communication
  */
 export class IntegrationManager {
-  private systems: Map<string, any> = new Map();
+  private systems: Map<string, unknown> = new Map();
   private eventBus: Map<string, Function[]> = new Map();
   private initOrder: string[] = [];
   private updateOrder: string[] = [];
@@ -16,7 +16,7 @@ export class IntegrationManager {
   /**
    * Register a system with the manager
    */
-  public registerSystem(name: string, system: any, dependencies: string[] = []): void {
+  public registerSystem(name: string, system: unknown, dependencies: string[] = []): void {
     if (this.systems.has(name)) {
       console.warn(`[IntegrationManager] System ${name} already registered`);
       return;
@@ -154,7 +154,7 @@ export class IntegrationManager {
   /**
    * Emit an event to all subscribers
    */
-  public emit(eventName: string, ...args: any[]): void {
+  public emit(eventName: string, ...args: unknown[]): void {
     if (!this.eventBus.has(eventName)) return;
     
     const callbacks = this.eventBus.get(eventName)!;
@@ -173,7 +173,7 @@ export class IntegrationManager {
   public pauseAll(): void {
     console.log('[IntegrationManager] Pausing all systems...');
     
-    for (const [_name, system] of this.systems) {
+    for (const [, system] of this.systems) {
       if (typeof system.pause === 'function') {
         system.pause();
       }
@@ -186,7 +186,7 @@ export class IntegrationManager {
   public resumeAll(): void {
     console.log('[IntegrationManager] Resuming all systems...');
     
-    for (const [_name, system] of this.systems) {
+    for (const [, system] of this.systems) {
       if (typeof system.resume === 'function') {
         system.resume();
       }
@@ -196,8 +196,8 @@ export class IntegrationManager {
   /**
    * Get statistics about all systems
    */
-  public getStats(): any {
-    const stats: any = {
+  public getStats(): Record<string, unknown> {
+    const stats: Record<string, unknown> = {
       totalSystems: this.systems.size,
       systems: {}
     };

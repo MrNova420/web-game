@@ -63,7 +63,7 @@ export class PerformanceMonitor {
   /**
    * Update metrics
    */
-  update(deltaTime: number, renderer?: any, scene?: any) {
+  update(deltaTime: number, renderer?: { info?: { render?: { calls?: number; triangles?: number } } }, scene?: unknown) {
     if (!this.enabled) return;
 
     const currentTime = performance.now();
@@ -86,8 +86,9 @@ export class PerformanceMonitor {
     }
 
     // Memory usage (if available)
-    if ((performance as any).memory) {
-      this.metrics.memory = Math.round((performance as any).memory.usedJSHeapSize / 1048576);
+    const perfWithMemory = performance as { memory?: { usedJSHeapSize?: number } };
+    if (perfWithMemory.memory) {
+      this.metrics.memory = Math.round((perfWithMemory.memory.usedJSHeapSize || 0) / 1048576);
     }
 
     // Count entities in scene

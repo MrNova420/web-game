@@ -144,7 +144,7 @@ export class PBRMaterialSystem {
       texture.wrapT = THREE.RepeatWrapping;
       this.cache.set(path, texture);
       return texture;
-    } catch (_error) {
+    } catch {
       console.warn(`[PBRMaterialSystem] Texture not found: ${path}`);
       return null;
     }
@@ -216,7 +216,7 @@ export class PBRMaterialSystem {
   /**
    * Get material statistics
    */
-  public getStats(): any {
+  public getStats(): { cachedTextures: number; availableMaterialTypes: string[] } {
     return {
       cachedTextures: this.cache.size,
       availableMaterialTypes: Object.keys(this.pbrTexturePaths)

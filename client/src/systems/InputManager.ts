@@ -75,15 +75,15 @@ export class InputManager {
     // Mouse events
     const target = canvas || window;
     
-    target.addEventListener('mousedown', (e: any) => {
+    target.addEventListener('mousedown', (e: MouseEvent) => {
       this.mouseButtons.set(e.button, true);
     });
 
-    target.addEventListener('mouseup', (e: any) => {
+    target.addEventListener('mouseup', (e: MouseEvent) => {
       this.mouseButtons.set(e.button, false);
     });
 
-    target.addEventListener('mousemove', (e: any) => {
+    target.addEventListener('mousemove', (e: MouseEvent) => {
       this.mousePosition.x = e.clientX;
       this.mousePosition.y = e.clientY;
       
@@ -94,7 +94,7 @@ export class InputManager {
       this.lastMousePosition.y = e.clientY;
     });
 
-    target.addEventListener('wheel', (e: any) => {
+    target.addEventListener('wheel', (e: WheelEvent) => {
       this.wheelDelta = e.deltaY;
     });
 

@@ -157,7 +157,7 @@ export class CombatSystem {
     targetId: string,
     targetPos: THREE.Vector3,
     targetStats: { defense: number },
-    manaCost: number
+    _manaCost: number
   ): { success: boolean; damage?: number; isCritical?: boolean } {
     
     const SPELL_RANGE = 20.0;
@@ -245,7 +245,7 @@ export class CombatSystem {
   /**
    * Update cooldowns
    */
-  update(deltaTime: number) {
+  update(_deltaTime: number) {
     // Cooldowns are handled with timestamps, no update needed
   }
 

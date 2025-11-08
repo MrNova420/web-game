@@ -1,5 +1,15 @@
 import * as THREE from 'three';
 
+interface QualityPreset {
+  shadowMapSize: number;
+  antialiasing: boolean;
+  pixelRatio: number;
+  toneMappingExposure: number;
+  shadowsEnabled: boolean;
+  aoEnabled: boolean;
+  bloomEnabled: boolean;
+}
+
 /**
  * AdvancedRenderer - Industry-standard rendering configuration
  * Implements best practices for 3D open world games
@@ -79,7 +89,7 @@ export class AdvancedRenderer {
     console.log(`[AdvancedRenderer] Initialized with ${qualityPreset} quality preset`);
   }
   
-  private setupRenderer(preset: any): void {
+  private setupRenderer(preset: QualityPreset): void {
     this.renderer.setSize(window.innerWidth, window.innerHeight);
     this.renderer.setPixelRatio(preset.pixelRatio);
     
@@ -104,7 +114,7 @@ export class AdvancedRenderer {
     console.log(`  - Antialiasing: ${preset.antialiasing ? 'ON' : 'OFF'}`);
   }
   
-  private setupShadows(preset: any): void {
+  private setupShadows(preset: QualityPreset): void {
     this.renderer.shadowMap.enabled = preset.shadowsEnabled;
     
     if (preset.shadowsEnabled) {
@@ -233,7 +243,7 @@ export class AdvancedRenderer {
   /**
    * Get rendering statistics
    */
-  public getStats(): any {
+  public getStats(): { memory: object; render: object } {
     return {
       memory: this.renderer.info.memory,
       render: this.renderer.info.render,

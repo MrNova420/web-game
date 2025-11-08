@@ -746,7 +746,7 @@ export class UISystem {
     this.panels.set('settings', panel);
   }
 
-  private createSettingRow(label: string, type: string, options: string[] | null = null, value: any = null): string {
+  private createSettingRow(label: string, type: string, options: string[] | null = null, value: unknown = null): string {
     let control = '';
     
     if (type === 'checkbox') {

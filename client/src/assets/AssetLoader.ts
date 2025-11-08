@@ -8,7 +8,7 @@ export class AssetLoader {
   private objLoader = new OBJLoader();
   private mtlLoader = new MTLLoader();
   private textureLoader = new THREE.TextureLoader();
-  private cache = new Map<string, any>();
+  private cache = new Map<string, THREE.Object3D | THREE.Texture>();
 
   async loadModel(path: string): Promise<THREE.Object3D> {
     if (this.cache.has(path)) {
@@ -52,7 +52,7 @@ export class AssetLoader {
         const materials = await this.mtlLoader.loadAsync(mtlPath);
         materials.preload();
         this.objLoader.setMaterials(materials);
-      } catch (_e) {
+      } catch {
         // MTL file doesn't exist or failed to load, continue without materials
         console.warn(`[AssetLoader] Could not load MTL for ${path}, using default material`);
       }

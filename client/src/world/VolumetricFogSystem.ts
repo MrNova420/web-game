@@ -8,7 +8,7 @@ export class VolumetricFogSystem {
   private scene: THREE.Scene;
   private camera: THREE.PerspectiveCamera;
   private fogMesh: THREE.Mesh | null = null;
-  private fogUniforms: any;
+  private fogUniforms: { [key: string]: { value: unknown } };
   private enabled: boolean = true;
   
   // Fog parameters
@@ -158,7 +158,7 @@ export class VolumetricFogSystem {
   /**
    * Get current fog settings
    */
-  public getSettings(): any {
+  public getSettings(): { enabled: boolean; density: number; color: string } {
     return {
       enabled: this.enabled,
       density: this.fogDensity,

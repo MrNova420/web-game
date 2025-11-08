@@ -107,7 +107,7 @@ export class ChunkManager {
       }
     }
 
-    for (const [key, _chunkGroup] of this.chunks.entries()) {
+    for (const [key] of this.chunks.entries()) {
       const [cx, cz] = key.split(',').map(Number);
       const distance = Math.max(
         Math.abs(cx - chunkX),
