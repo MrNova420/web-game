@@ -9438,3 +9438,1390 @@ await worldBuilder.buildCompleteWorld();
 
 **RUN THE FAST-TRACK BUILDER AND YOUR GAME IS FIXED! 🎮**
 
+
+---
+
+## 💎 ULTRA-QUALITY: PRODUCTION-GRADE IMPLEMENTATION (NO SHORTCUTS)
+
+### CRITICAL: FAST + HIGHEST QUALITY + MOST ADVANCED
+
+**Goal**: Get it done quickly BUT with AAA-grade quality and all advanced features  
+**No compromises**: Full quality, full features, full optimization  
+**Timeline**: Fast-track WITH professional implementation  
+
+---
+
+## 🏆 SECTION U: ULTIMATE PRODUCTION-GRADE WORLD SYSTEM
+
+### U.1 Advanced Multi-Layer Terrain System
+
+```typescript
+// File: src/world/UltraTerrainSystem.ts
+// PRODUCTION GRADE: No shortcuts, all features
+
+class UltraTerrainSystem {
+  private chunks = new Map<string, UltraTerrainChunk>();
+  private workerPool: Worker[] = [];
+  private lodLevels = 4;
+  
+  // ADVANCED: Multi-octave noise with proper parameters
+  private noiseConfig = {
+    continental: {
+      octaves: 8,
+      frequency: 0.0001,
+      amplitude: 100,
+      persistence: 0.5,
+      lacunarity: 2.0
+    },
+    regional: {
+      octaves: 6,
+      frequency: 0.001,
+      amplitude: 40,
+      persistence: 0.55,
+      lacunarity: 2.1
+    },
+    local: {
+      octaves: 4,
+      frequency: 0.01,
+      amplitude: 10,
+      persistence: 0.6,
+      lacunarity: 2.2
+    },
+    detail: {
+      octaves: 3,
+      frequency: 0.1,
+      amplitude: 2,
+      persistence: 0.65,
+      lacunarity: 2.3
+    }
+  };
+  
+  // ADVANCED: Generate ultra-high quality terrain
+  async generateChunk(chunkX: number, chunkZ: number): Promise<UltraTerrainChunk> {
+    const resolution = 256; // High resolution for quality
+    const size = 64;
+    
+    // Create geometry with high vertex count
+    const geometry = new THREE.PlaneGeometry(
+      size, size,
+      resolution - 1, resolution - 1
+    );
+    
+    const vertices = geometry.attributes.position.array;
+    const uvs = geometry.attributes.uv.array;
+    
+    // ADVANCED: Store comprehensive vertex data
+    const vertexData = new Float32Array(vertices.length / 3 * 8);
+    // [height, slope, curvature, moisture, temperature, vegetation, erosion, ao]
+    
+    // Use Web Worker for terrain generation (non-blocking)
+    const terrainData = await this.generateTerrainInWorker(chunkX, chunkZ, resolution);
+    
+    for (let i = 0, j = 0; i < vertices.length; i += 3, j += 8) {
+      const localX = vertices[i];
+      const localZ = vertices[i + 1];
+      const worldX = localX + chunkX * size;
+      const worldZ = localZ + chunkZ * size;
+      
+      // ADVANCED: Multi-scale height calculation
+      const height = this.calculateAdvancedHeight(worldX, worldZ);
+      vertices[i + 2] = height;
+      vertexData[j] = height;
+      
+      // Calculate slope (gradient)
+      const dx = this.calculateAdvancedHeight(worldX + 1, worldZ) - height;
+      const dz = this.calculateAdvancedHeight(worldX, worldZ + 1) - height;
+      const slope = Math.sqrt(dx * dx + dz * dz);
+      vertexData[j + 1] = slope;
+      
+      // Calculate curvature (for erosion)
+      const d2x = this.calculateAdvancedHeight(worldX + 2, worldZ) - 2 * height + this.calculateAdvancedHeight(worldX - 2, worldZ);
+      const d2z = this.calculateAdvancedHeight(worldX, worldZ + 2) - 2 * height + this.calculateAdvancedHeight(worldX, worldZ - 2);
+      const curvature = Math.abs(d2x) + Math.abs(d2z);
+      vertexData[j + 2] = curvature;
+      
+      // Environmental factors with proper noise
+      vertexData[j + 3] = this.calculateMoisture(worldX, worldZ, height);
+      vertexData[j + 4] = this.calculateTemperature(worldX, worldZ, height);
+      vertexData[j + 5] = this.calculateVegetationDensity(worldX, worldZ, height, slope);
+      
+      // Hydraulic erosion simulation
+      vertexData[j + 6] = this.calculateErosion(worldX, worldZ, height, slope, curvature);
+      
+      // Ambient occlusion
+      vertexData[j + 7] = this.calculateAO(i, vertices, resolution);
+    }
+    
+    // CRITICAL: Compute high-quality normals
+    geometry.computeVertexNormals();
+    
+    // ADVANCED: Compute tangents for normal mapping
+    geometry.computeTangents();
+    
+    // Rotate to horizontal
+    geometry.rotateX(-Math.PI / 2);
+    
+    // Store vertex data as buffer attribute
+    geometry.setAttribute('vertexData', new THREE.BufferAttribute(vertexData, 8));
+    
+    // ADVANCED: Multi-texture material with all maps
+    const material = this.createAdvancedTerrainMaterial();
+    
+    const mesh = new THREE.Mesh(geometry, material);
+    mesh.receiveShadow = true;
+    mesh.castShadow = false;
+    
+    // ADVANCED: Generate LOD meshes
+    const lodMeshes = await this.generateLODMeshes(geometry, material);
+    
+    const chunk: UltraTerrainChunk = {
+      mesh,
+      lodMeshes,
+      worldX: chunkX,
+      worldZ: chunkZ,
+      bounds: this.calculateBounds(chunkX, chunkZ, size),
+      vertexData,
+      heightMap: this.extractHeightMap(vertexData),
+      normalMap: this.generateNormalMap(vertexData, resolution),
+      biomeMap: this.generateBiomeMap(chunkX, chunkZ, resolution)
+    };
+    
+    this.chunks.set(`${chunkX},${chunkZ}`, chunk);
+    return chunk;
+  }
+  
+  private calculateAdvancedHeight(x: number, z: number): number {
+    let height = 0;
+    
+    // ADVANCED: Multi-scale noise layers
+    // Continental scale (large landmasses)
+    const continental = this.multiOctaveNoise(
+      x * this.noiseConfig.continental.frequency,
+      z * this.noiseConfig.continental.frequency,
+      this.noiseConfig.continental
+    ) * this.noiseConfig.continental.amplitude;
+    
+    // Regional scale (mountains, valleys)
+    const regional = this.multiOctaveNoise(
+      x * this.noiseConfig.regional.frequency,
+      z * this.noiseConfig.regional.frequency,
+      this.noiseConfig.regional
+    ) * this.noiseConfig.regional.amplitude;
+    
+    // Local scale (hills, ridges)
+    const local = this.multiOctaveNoise(
+      x * this.noiseConfig.local.frequency,
+      z * this.noiseConfig.local.frequency,
+      this.noiseConfig.local
+    ) * this.noiseConfig.local.amplitude;
+    
+    // Detail scale (small features)
+    const detail = this.multiOctaveNoise(
+      x * this.noiseConfig.detail.frequency,
+      z * this.noiseConfig.detail.frequency,
+      this.noiseConfig.detail
+    ) * this.noiseConfig.detail.amplitude;
+    
+    // Combine scales with proper weighting
+    height = continental * 0.4 + regional * 0.3 + local * 0.2 + detail * 0.1;
+    
+    // ADVANCED: Ridged noise for mountain ranges
+    const ridgeNoise = 1 - Math.abs(this.noise(x * 0.003, z * 0.003));
+    const ridgeWeight = Math.max(0, continental * 0.01);
+    height += Math.pow(ridgeNoise, 2) * 30 * ridgeWeight;
+    
+    // ADVANCED: Plateau formation
+    const plateauNoise = this.noise(x * 0.0008, z * 0.0008);
+    if (plateauNoise > 0.3) {
+      const plateauHeight = Math.floor(height / 15) * 15;
+      const blend = (plateauNoise - 0.3) / 0.7;
+      height = height * (1 - blend) + plateauHeight * blend;
+    }
+    
+    // ADVANCED: Valley carving
+    const valleyNoise = this.noise(x * 0.002 + 5000, z * 0.002 + 5000);
+    if (valleyNoise < 0.3) {
+      const valleyDepth = (0.3 - valleyNoise) * 40;
+      height -= valleyDepth;
+    }
+    
+    return Math.max(0, height);
+  }
+  
+  private multiOctaveNoise(x: number, z: number, config: NoiseConfig): number {
+    let value = 0;
+    let amplitude = config.amplitude;
+    let frequency = 1.0;
+    let maxValue = 0;
+    
+    for (let octave = 0; octave < config.octaves; octave++) {
+      value += this.noise(x * frequency, z * frequency) * amplitude;
+      maxValue += amplitude;
+      
+      amplitude *= config.persistence;
+      frequency *= config.lacunarity;
+    }
+    
+    return value / maxValue; // Normalize
+  }
+  
+  private createAdvancedTerrainMaterial(): THREE.ShaderMaterial {
+    return new THREE.ShaderMaterial({
+      uniforms: {
+        // Texture arrays for terrain layers
+        textures: { value: [] },
+        normalMaps: { value: [] },
+        roughnessMaps: { value: [] },
+        aoMaps: { value: [] },
+        
+        // Blend parameters
+        textureScale: { value: 10.0 },
+        blendSharpness: { value: 2.0 },
+        heightBlendRange: { value: new THREE.Vector4(0, 15, 30, 50) },
+        slopeThreshold: { value: 0.7 },
+        
+        // Environmental
+        moisture: { value: null },
+        temperature: { value: null },
+        
+        // Lighting
+        sunDirection: { value: new THREE.Vector3(0.5, 1, 0.3).normalize() },
+        sunColor: { value: new THREE.Color(1.0, 0.95, 0.85) },
+        sunIntensity: { value: 1.2 },
+        skyColor: { value: new THREE.Color(0.4, 0.5, 0.6) },
+        groundColor: { value: new THREE.Color(0.2, 0.25, 0.2) },
+        
+        // Advanced features
+        ambientOcclusion: { value: true },
+        detailNormals: { value: true },
+        triplanarMapping: { value: false },
+        parallaxScale: { value: 0.05 }
+      },
+      
+      vertexShader: `
+        varying vec2 vUv;
+        varying vec3 vNormal;
+        varying vec3 vTangent;
+        varying vec3 vBitangent;
+        varying vec3 vWorldPosition;
+        varying vec4 vVertexData;
+        varying vec3 vViewDir;
+        
+        attribute vec4 vertexData;
+        attribute vec4 tangent;
+        
+        void main() {
+          vUv = uv;
+          
+          // Transform normal, tangent, bitangent to world space
+          vNormal = normalize((modelMatrix * vec4(normal, 0.0)).xyz);
+          vTangent = normalize((modelMatrix * vec4(tangent.xyz, 0.0)).xyz);
+          vBitangent = normalize(cross(vNormal, vTangent) * tangent.w);
+          
+          vWorldPosition = (modelMatrix * vec4(position, 1.0)).xyz;
+          vVertexData = vertexData;
+          
+          // View direction in tangent space
+          vec3 worldViewDir = cameraPosition - vWorldPosition;
+          vViewDir = vec3(
+            dot(worldViewDir, vTangent),
+            dot(worldViewDir, vBitangent),
+            dot(worldViewDir, vNormal)
+          );
+          
+          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        }
+      `,
+      
+      fragmentShader: `
+        uniform sampler2D textures[4]; // grass, dirt, rock, sand
+        uniform sampler2D normalMaps[4];
+        uniform sampler2D roughnessMaps[4];
+        uniform sampler2D aoMaps[4];
+        
+        uniform float textureScale;
+        uniform float blendSharpness;
+        uniform vec4 heightBlendRange;
+        uniform float slopeThreshold;
+        
+        uniform vec3 sunDirection;
+        uniform vec3 sunColor;
+        uniform float sunIntensity;
+        uniform vec3 skyColor;
+        uniform vec3 groundColor;
+        
+        uniform bool ambientOcclusion;
+        uniform bool detailNormals;
+        uniform float parallaxScale;
+        
+        varying vec2 vUv;
+        varying vec3 vNormal;
+        varying vec3 vTangent;
+        varying vec3 vBitangent;
+        varying vec3 vWorldPosition;
+        varying vec4 vVertexData;
+        varying vec3 vViewDir;
+        
+        // ADVANCED: Parallax occlusion mapping
+        vec2 parallaxMapping(vec2 texCoords, vec3 viewDir, sampler2D heightMap) {
+          const float minLayers = 10.0;
+          const float maxLayers = 32.0;
+          float numLayers = mix(maxLayers, minLayers, abs(dot(vec3(0, 0, 1), viewDir)));
+          
+          float layerDepth = 1.0 / numLayers;
+          float currentLayerDepth = 0.0;
+          vec2 P = viewDir.xy * parallaxScale;
+          vec2 deltaTexCoords = P / numLayers;
+          
+          vec2 currentTexCoords = texCoords;
+          float currentDepthMapValue = texture2D(heightMap, currentTexCoords).r;
+          
+          while(currentLayerDepth < currentDepthMapValue) {
+            currentTexCoords -= deltaTexCoords;
+            currentDepthMapValue = texture2D(heightMap, currentTexCoords).r;
+            currentLayerDepth += layerDepth;
+          }
+          
+          // Interpolation
+          vec2 prevTexCoords = currentTexCoords + deltaTexCoords;
+          float afterDepth = currentDepthMapValue - currentLayerDepth;
+          float beforeDepth = texture2D(heightMap, prevTexCoords).r - currentLayerDepth + layerDepth;
+          float weight = afterDepth / (afterDepth - beforeDepth);
+          
+          return prevTexCoords * weight + currentTexCoords * (1.0 - weight);
+        }
+        
+        // ADVANCED: Height-based terrain blending
+        vec4 blendTextures(vec2 uv, float height, float slope) {
+          // Sample all textures
+          vec4 grass = texture2D(textures[0], uv * textureScale);
+          vec4 dirt = texture2D(textures[1], uv * textureScale);
+          vec4 rock = texture2D(textures[2], uv * textureScale);
+          vec4 sand = texture2D(textures[3], uv * textureScale);
+          
+          // Height-based weights
+          float grassWeight = smoothstep(heightBlendRange.x, heightBlendRange.y, height);
+          float dirtWeight = smoothstep(heightBlendRange.y, heightBlendRange.z, height);
+          float rockWeight = smoothstep(heightBlendRange.z, heightBlendRange.w, height);
+          
+          // Slope-based rock blend
+          float slopeRock = smoothstep(slopeThreshold - 0.2, slopeThreshold, slope);
+          rockWeight = max(rockWeight, slopeRock);
+          
+          // Normalize weights
+          float totalWeight = grassWeight + dirtWeight + rockWeight + (1.0 - grassWeight);
+          grassWeight /= totalWeight;
+          dirtWeight /= totalWeight;
+          rockWeight /= totalWeight;
+          float sandWeight = 1.0 - (grassWeight + dirtWeight + rockWeight);
+          
+          // Blend with sharpness
+          grassWeight = pow(grassWeight, blendSharpness);
+          dirtWeight = pow(dirtWeight, blendSharpness);
+          rockWeight = pow(rockWeight, blendSharpness);
+          sandWeight = pow(sandWeight, blendSharpness);
+          
+          // Normalize again
+          totalWeight = grassWeight + dirtWeight + rockWeight + sandWeight;
+          
+          return (grass * grassWeight + dirt * dirtWeight + rock * rockWeight + sand * sandWeight) / totalWeight;
+        }
+        
+        // ADVANCED: PBR lighting with multiple light types
+        vec3 calculatePBRLighting(vec3 baseColor, vec3 normal, float roughness, float metalness, float ao) {
+          vec3 viewDir = normalize(cameraPosition - vWorldPosition);
+          
+          // Direct lighting (sun)
+          float NdotL = max(dot(normal, sunDirection), 0.0);
+          vec3 halfDir = normalize(sunDirection + viewDir);
+          float NdotH = max(dot(normal, halfDir), 0.0);
+          
+          // Fresnel (Schlick approximation)
+          vec3 F0 = mix(vec3(0.04), baseColor, metalness);
+          vec3 F = F0 + (1.0 - F0) * pow(1.0 - max(dot(halfDir, viewDir), 0.0), 5.0);
+          
+          // Distribution (GGX)
+          float alpha = roughness * roughness;
+          float alpha2 = alpha * alpha;
+          float denom = NdotH * NdotH * (alpha2 - 1.0) + 1.0;
+          float D = alpha2 / (3.14159265 * denom * denom);
+          
+          // Geometry (Smith)
+          float k = (roughness + 1.0) * (roughness + 1.0) / 8.0;
+          float NdotV = max(dot(normal, viewDir), 0.0);
+          float G1 = NdotV / (NdotV * (1.0 - k) + k);
+          float G2 = NdotL / (NdotL * (1.0 - k) + k);
+          float G = G1 * G2;
+          
+          // Specular
+          vec3 specular = (D * F * G) / max(4.0 * NdotV * NdotL, 0.001);
+          
+          // Diffuse
+          vec3 kD = (1.0 - F) * (1.0 - metalness);
+          vec3 diffuse = kD * baseColor / 3.14159265;
+          
+          // Combine
+          vec3 directLight = (diffuse + specular) * sunColor * sunIntensity * NdotL;
+          
+          // Hemisphere lighting (ambient)
+          float skyInfluence = (dot(normal, vec3(0, 1, 0)) + 1.0) * 0.5;
+          vec3 ambientLight = mix(groundColor, skyColor, skyInfluence) * baseColor * 0.3;
+          
+          // Apply ambient occlusion
+          if (ambientOcclusion) {
+            ambientLight *= ao;
+          }
+          
+          return directLight + ambientLight;
+        }
+        
+        void main() {
+          float height = vVertexData.x;
+          float slope = vVertexData.y;
+          float ao = vVertexData.w;
+          
+          vec2 uv = vUv;
+          
+          // Apply parallax mapping if enabled
+          if (parallaxScale > 0.0) {
+            uv = parallaxMapping(vUv, normalize(vViewDir), textures[0]);
+          }
+          
+          // Sample base color
+          vec4 baseColor = blendTextures(uv, height, slope);
+          
+          // Sample and blend normal maps
+          vec3 normal = vNormal;
+          if (detailNormals) {
+            vec3 tangentNormal = texture2D(normalMaps[0], uv * textureScale).rgb * 2.0 - 1.0;
+            mat3 TBN = mat3(vTangent, vBitangent, vNormal);
+            normal = normalize(TBN * tangentNormal);
+          }
+          
+          // Sample roughness
+          float roughness = texture2D(roughnessMaps[0], uv * textureScale).r;
+          
+          // Calculate lighting
+          vec3 finalColor = calculatePBRLighting(
+            baseColor.rgb,
+            normal,
+            roughness,
+            0.0, // Non-metallic terrain
+            ao
+          );
+          
+          // Atmospheric fog
+          float fogDistance = length(vWorldPosition - cameraPosition);
+          float fogAmount = 1.0 - exp(-fogDistance * 0.003);
+          finalColor = mix(finalColor, skyColor, fogAmount);
+          
+          gl_FragColor = vec4(finalColor, 1.0);
+        }
+      `,
+      
+      side: THREE.FrontSide,
+      transparent: false
+    });
+  }
+}
+```
+
+---
+
+### U.2 Advanced Vegetation System with ALL Features
+
+```typescript
+// File: src/world/UltraVegetationSystem.ts
+// PRODUCTION GRADE: Complete vegetation system
+
+class UltraVegetationSystem {
+  private instanceManagers = new Map<string, AdvancedInstanceManager>();
+  private vegetationGrid: SpatialGrid;
+  private windSystem: WindSystem;
+  private seasonSystem: SeasonSystem;
+  
+  // ADVANCED: Instance manager with all features
+  class AdvancedInstanceManager {
+    private instancedMesh: THREE.InstancedMesh;
+    private instances: VegetationInstance[] = [];
+    private lodGroups: LODGroup[] = [];
+    private maxInstances: number;
+    private currentCount = 0;
+    
+    // ADVANCED: Create with multiple LOD levels
+    constructor(baseModel: THREE.Mesh, maxInstances: number) {
+      this.maxInstances = maxInstances;
+      
+      // Create LOD versions
+      this.lodGroups = [
+        {
+          distance: 0,
+          mesh: new THREE.InstancedMesh(
+            baseModel.geometry.clone(),
+            baseModel.material.clone(),
+            maxInstances
+          )
+        },
+        {
+          distance: 50,
+          mesh: new THREE.InstancedMesh(
+            this.decimateGeometry(baseModel.geometry, 0.5),
+            baseModel.material.clone(),
+            maxInstances
+          )
+        },
+        {
+          distance: 100,
+          mesh: new THREE.InstancedMesh(
+            this.decimateGeometry(baseModel.geometry, 0.25),
+            baseModel.material.clone(),
+            maxInstances
+          )
+        },
+        {
+          distance: 200,
+          mesh: new THREE.InstancedMesh(
+            this.createBillboard(baseModel),
+            this.createBillboardMaterial(baseModel),
+            maxInstances
+          )
+        }
+      ];
+      
+      // Setup all meshes
+      for (const lod of this.lodGroups) {
+        lod.mesh.castShadow = true;
+        lod.mesh.receiveShadow = true;
+        lod.mesh.frustumCulled = true;
+        scene.add(lod.mesh);
+      }
+    }
+    
+    // ADVANCED: Add instance with wind animation
+    addInstance(
+      position: THREE.Vector3,
+      rotation: THREE.Quaternion,
+      scale: THREE.Vector3,
+      windInfluence: number = 1.0
+    ): void {
+      
+      const instance: VegetationInstance = {
+        position,
+        rotation,
+        scale,
+        windInfluence,
+        windPhase: Math.random() * Math.PI * 2,
+        boundingSphere: new THREE.Sphere(position, scale.x * 2),
+        visible: true,
+        lodLevel: 0
+      };
+      
+      this.instances.push(instance);
+    }
+    
+    // ADVANCED: Update with LOD, frustum culling, wind
+    update(camera: THREE.Camera, frustum: THREE.Frustum, time: number): void {
+      const cameraPos = camera.position;
+      
+      // Reset all LOD counts
+      for (const lod of this.lodGroups) {
+        lod.mesh.count = 0;
+      }
+      
+      // Update each instance
+      for (const instance of this.instances) {
+        // Frustum culling
+        if (!frustum.intersectsSphere(instance.boundingSphere)) {
+          instance.visible = false;
+          continue;
+        }
+        instance.visible = true;
+        
+        // Determine LOD level based on distance
+        const distance = instance.position.distanceTo(cameraPos);
+        let lodLevel = 0;
+        for (let i = this.lodGroups.length - 1; i >= 0; i--) {
+          if (distance >= this.lodGroups[i].distance) {
+            lodLevel = i;
+            break;
+          }
+        }
+        instance.lodLevel = lodLevel;
+        
+        // Apply wind animation
+        const windOffset = this.calculateWindOffset(instance, time);
+        
+        // Build matrix with wind
+        const matrix = new THREE.Matrix4();
+        const windRotation = new THREE.Quaternion().setFromEuler(
+          new THREE.Euler(windOffset.x, 0, windOffset.z)
+        );
+        const finalRotation = instance.rotation.clone().multiply(windRotation);
+        
+        matrix.compose(instance.position, finalRotation, instance.scale);
+        
+        // Add to appropriate LOD mesh
+        const lodMesh = this.lodGroups[lodLevel].mesh;
+        if (lodMesh.count < this.maxInstances) {
+          lodMesh.setMatrixAt(lodMesh.count, matrix);
+          lodMesh.count++;
+        }
+      }
+      
+      // Update all LOD meshes
+      for (const lod of this.lodGroups) {
+        if (lod.mesh.count > 0) {
+          lod.mesh.instanceMatrix.needsUpdate = true;
+        }
+      }
+    }
+    
+    private calculateWindOffset(instance: VegetationInstance, time: number): THREE.Vector3 {
+      // ADVANCED: Realistic wind with multiple frequencies
+      const windSpeed = this.windSystem.getWindSpeed();
+      const windDir = this.windSystem.getWindDirection();
+      
+      // Main wind wave
+      const mainWave = Math.sin(time * 0.5 + instance.windPhase) * windSpeed;
+      
+      // Gust layer
+      const gustWave = Math.sin(time * 2.0 + instance.windPhase * 0.7) * windSpeed * 0.3;
+      
+      // Detail flutter
+      const flutter = Math.sin(time * 5.0 + instance.windPhase * 1.3) * windSpeed * 0.1;
+      
+      const totalWind = (mainWave + gustWave + flutter) * instance.windInfluence * 0.02;
+      
+      return new THREE.Vector3(
+        windDir.x * totalWind,
+        0,
+        windDir.z * totalWind
+      );
+    }
+  }
+  
+  // ADVANCED: Populate with proper density and distribution
+  async populateChunkAdvanced(
+    chunk: UltraTerrainChunk,
+    biome: Biome
+  ): Promise<void> {
+    
+    // Get biome-specific vegetation rules
+    const rules = this.getBiomeVegetationRules(biome);
+    
+    // ADVANCED: Multi-layer Poisson disc sampling
+    const layers = [
+      { name: 'trees', minDist: 5.0, density: rules.treeDensity },
+      { name: 'bushes', minDist: 3.0, density: rules.bushDensity },
+      { name: 'grass', minDist: 1.5, density: rules.grassDensity },
+      { name: 'flowers', minDist: 2.0, density: rules.flowerDensity },
+      { name: 'rocks', minDist: 4.0, density: rules.rockDensity }
+    ];
+    
+    for (const layer of layers) {
+      const points = this.poissonDiscSampling(
+        chunk.bounds,
+        layer.minDist,
+        layer.density
+      );
+      
+      for (const point of points) {
+        // Sample terrain data
+        const terrainData = this.sampleTerrainData(chunk, point);
+        
+        // ADVANCED: Suitability check
+        if (!this.isLocationSuitable(layer.name, terrainData, rules)) {
+          continue;
+        }
+        
+        // Select appropriate model
+        const modelName = this.selectModel(layer.name, terrainData, biome);
+        
+        // Place with proper parameters
+        await this.placeVegetationAdvanced(
+          layer.name,
+          modelName,
+          point,
+          terrainData,
+          rules
+        );
+      }
+    }
+  }
+  
+  private isLocationSuitable(
+    type: string,
+    terrain: TerrainData,
+    rules: BiomeRules
+  ): boolean {
+    
+    // ADVANCED: Multi-factor suitability
+    
+    // Check slope
+    if (terrain.slope > rules.maxSlope[type]) {
+      return false;
+    }
+    
+    // Check height range
+    if (terrain.height < rules.heightRange[type][0] || 
+        terrain.height > rules.heightRange[type][1]) {
+      return false;
+    }
+    
+    // Check moisture requirements
+    if (terrain.moisture < rules.moistureRange[type][0] ||
+        terrain.moisture > rules.moistureRange[type][1]) {
+      return false;
+    }
+    
+    // Check vegetation density from terrain
+    if (terrain.vegetationDensity < rules.minVegetationDensity[type]) {
+      return false;
+    }
+    
+    // ADVANCED: Noise-based randomization for natural look
+    const placementNoise = this.noise(terrain.position.x * 0.1, terrain.position.z * 0.1);
+    if (placementNoise < rules.placementThreshold[type]) {
+      return false;
+    }
+    
+    return true;
+  }
+}
+```
+
+
+---
+
+## 🌤️ SECTION V: PROFESSIONAL SKY & ATMOSPHERE SYSTEM
+
+### YOUR SKYBOX ASSETS
+
+**Location**: `extracted_assets/Skyboxes/`
+
+**Available Skyboxes (5 high-quality PNG files):**
+1. **BlueSkySkybox.png** - Clear blue day sky
+2. **SkySkybox.png** - Standard day sky
+3. **GreenSky.png** - Mystical/magical green sky
+4. **PurplyBlueSky.png** - Twilight/dusk purple-blue sky
+5. **SunsetSky.png** - Beautiful sunset/sunrise sky
+
+**Total**: 5 professional skybox textures (~57 MB total)
+
+---
+
+### V.1 Advanced Sky System Using ALL Your Skyboxes
+
+```typescript
+// File: src/world/AdvancedSkySystem.ts
+// PRODUCTION GRADE: Complete sky system with all your skyboxes
+
+class AdvancedSkySystem {
+  private skyboxes = new Map<string, THREE.Texture>();
+  private currentSkybox: THREE.Mesh;
+  private skyMaterial: THREE.ShaderMaterial;
+  private timeOfDay = 0.5; // 0-1 (0=midnight, 0.5=noon, 1=midnight)
+  
+  // ADVANCED: Load ALL your skybox assets
+  private skyboxAssets = {
+    clearDay: {
+      path: '../extracted_assets/Skyboxes/BlueSkySkybox.png',
+      timeRange: [0.3, 0.7], // 6 AM to 6 PM
+      fogColor: new THREE.Color(0xb8d4c8),
+      sunColor: new THREE.Color(0xfff5e6),
+      ambientColor: new THREE.Color(0.4, 0.5, 0.6),
+      intensity: 1.5
+    },
+    
+    standard: {
+      path: '../extracted_assets/Skyboxes/SkySkybox.png',
+      timeRange: [0.25, 0.75],
+      fogColor: new THREE.Color(0xc8d8e8),
+      sunColor: new THREE.Color(0xfff8e8),
+      ambientColor: new THREE.Color(0.45, 0.5, 0.55),
+      intensity: 1.3
+    },
+    
+    mystical: {
+      path: '../extracted_assets/Skyboxes/GreenSky.png',
+      timeRange: [0.0, 1.0], // Can be used any time
+      fogColor: new THREE.Color(0xa8c8b8),
+      sunColor: new THREE.Color(0xe8f8e8),
+      ambientColor: new THREE.Color(0.3, 0.5, 0.4),
+      intensity: 1.2,
+      special: true // For magical areas
+    },
+    
+    twilight: {
+      path: '../extracted_assets/Skyboxes/PurplyBlueSky.png',
+      timeRange: [0.2, 0.3], // Dawn
+      timeRange2: [0.7, 0.8], // Dusk
+      fogColor: new THREE.Color(0xb8a8c8),
+      sunColor: new THREE.Color(0xf8d8e8),
+      ambientColor: new THREE.Color(0.4, 0.3, 0.5),
+      intensity: 1.0
+    },
+    
+    sunset: {
+      path: '../extracted_assets/Skyboxes/SunsetSky.png',
+      timeRange: [0.15, 0.25], // Sunrise
+      timeRange2: [0.75, 0.85], // Sunset
+      fogColor: new THREE.Color(0xe8c8a8),
+      sunColor: new THREE.Color(0xffc080),
+      ambientColor: new THREE.Color(0.6, 0.4, 0.3),
+      intensity: 1.4
+    }
+  };
+  
+  // ADVANCED: Initialize sky system
+  async initialize(): Promise<void> {
+    console.log('🌤️ Loading ALL skybox assets...');
+    
+    const loader = new THREE.TextureLoader();
+    
+    // Load all skyboxes in parallel
+    await Promise.all(
+      Object.entries(this.skyboxAssets).map(async ([name, config]) => {
+        try {
+          const texture = await loader.loadAsync(config.path);
+          texture.encoding = THREE.sRGBEncoding;
+          texture.mapping = THREE.EquirectangularReflectionMapping;
+          this.skyboxes.set(name, texture);
+          console.log(`  ✓ Loaded: ${name}`);
+        } catch (error) {
+          console.error(`  ✗ Failed to load ${name}:`, error);
+        }
+      })
+    );
+    
+    console.log(`✅ Loaded ${this.skyboxes.size}/5 skyboxes`);
+    
+    // Create sky sphere
+    this.createSkySphere();
+    
+    // Set initial sky
+    this.updateSky(0.5); // Noon
+  }
+  
+  private createSkySphere(): void {
+    // ADVANCED: Large sphere with custom shader for sky
+    const skyGeometry = new THREE.SphereGeometry(500, 64, 64);
+    
+    this.skyMaterial = new THREE.ShaderMaterial({
+      uniforms: {
+        skyTexture1: { value: null },
+        skyTexture2: { value: null },
+        blendFactor: { value: 0.0 },
+        sunDirection: { value: new THREE.Vector3(0, 1, 0) },
+        sunColor: { value: new THREE.Color(1, 1, 1) },
+        sunSize: { value: 0.05 },
+        sunIntensity: { value: 1.0 },
+        atmosphereThickness: { value: 2.0 },
+        horizonColor: { value: new THREE.Color(0.8, 0.8, 0.9) },
+        zenithColor: { value: new THREE.Color(0.2, 0.4, 0.8) },
+        exposure: { value: 1.0 }
+      },
+      
+      vertexShader: `
+        varying vec3 vWorldPosition;
+        varying vec2 vUv;
+        
+        void main() {
+          vUv = uv;
+          vec4 worldPosition = modelMatrix * vec4(position, 1.0);
+          vWorldPosition = worldPosition.xyz;
+          
+          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        }
+      `,
+      
+      fragmentShader: `
+        uniform sampler2D skyTexture1;
+        uniform sampler2D skyTexture2;
+        uniform float blendFactor;
+        uniform vec3 sunDirection;
+        uniform vec3 sunColor;
+        uniform float sunSize;
+        uniform float sunIntensity;
+        uniform float atmosphereThickness;
+        uniform vec3 horizonColor;
+        uniform vec3 zenithColor;
+        uniform float exposure;
+        
+        varying vec3 vWorldPosition;
+        varying vec2 vUv;
+        
+        void main() {
+          // Sample both skyboxes
+          vec3 sky1 = texture2D(skyTexture1, vUv).rgb;
+          vec3 sky2 = texture2D(skyTexture2, vUv).rgb;
+          
+          // Blend between skyboxes
+          vec3 skyColor = mix(sky1, sky2, blendFactor);
+          
+          // ADVANCED: Add sun disc
+          vec3 viewDir = normalize(vWorldPosition);
+          float sunDot = dot(viewDir, sunDirection);
+          float sunDisc = smoothstep(1.0 - sunSize, 1.0, sunDot);
+          vec3 sunGlow = sunColor * sunDisc * sunIntensity;
+          
+          // ADVANCED: Atmospheric scattering around sun
+          float sunScatter = pow(max(sunDot, 0.0), 4.0) * 0.3;
+          vec3 scatterColor = sunColor * sunScatter;
+          
+          // ADVANCED: Horizon gradient
+          float horizonBlend = abs(viewDir.y);
+          vec3 atmosphereColor = mix(horizonColor, zenithColor, horizonBlend);
+          
+          // Combine all components
+          vec3 finalColor = skyColor;
+          finalColor += sunGlow;
+          finalColor += scatterColor;
+          finalColor = mix(finalColor, atmosphereColor, atmosphereThickness * 0.1);
+          
+          // Apply exposure
+          finalColor *= exposure;
+          
+          // Tone mapping
+          finalColor = finalColor / (finalColor + vec3(1.0));
+          
+          gl_FragColor = vec4(finalColor, 1.0);
+        }
+      `,
+      
+      side: THREE.BackSide,
+      depthWrite: false
+    });
+    
+    this.currentSkybox = new THREE.Mesh(skyGeometry, this.skyMaterial);
+    this.currentSkybox.renderOrder = -1; // Render first
+    scene.add(this.currentSkybox);
+  }
+  
+  // ADVANCED: Update sky based on time and conditions
+  updateSky(timeOfDay: number, weather: string = 'clear', biome: string = 'normal'): void {
+    this.timeOfDay = timeOfDay;
+    
+    // ADVANCED: Select appropriate skyboxes based on time
+    const skyConfig = this.selectSkyboxes(timeOfDay, weather, biome);
+    
+    // Update shader uniforms
+    this.skyMaterial.uniforms.skyTexture1.value = skyConfig.texture1;
+    this.skyMaterial.uniforms.skyTexture2.value = skyConfig.texture2;
+    this.skyMaterial.uniforms.blendFactor.value = skyConfig.blend;
+    
+    // Update sun position
+    const sunAngle = timeOfDay * Math.PI * 2;
+    const sunDir = new THREE.Vector3(
+      Math.sin(sunAngle) * 0.5,
+      Math.cos(sunAngle),
+      Math.sin(sunAngle) * 0.3
+    ).normalize();
+    this.skyMaterial.uniforms.sunDirection.value = sunDir;
+    
+    // Update sun color based on time
+    const sunColor = this.getSunColor(timeOfDay);
+    this.skyMaterial.uniforms.sunColor.value = sunColor;
+    this.skyMaterial.uniforms.sunIntensity.value = skyConfig.intensity;
+    
+    // Update scene fog to match sky
+    scene.fog.color.copy(skyConfig.fogColor);
+    
+    // Update scene lighting
+    this.updateSceneLighting(sunDir, sunColor, skyConfig);
+  }
+  
+  private selectSkyboxes(
+    timeOfDay: number, 
+    weather: string, 
+    biome: string
+  ): SkyConfig {
+    
+    // ADVANCED: Use mystical green sky for magical biomes
+    if (biome === 'magical' || biome === 'enchanted') {
+      return {
+        texture1: this.skyboxes.get('mystical'),
+        texture2: this.skyboxes.get('clearDay'),
+        blend: 0.8,
+        fogColor: this.skyboxAssets.mystical.fogColor,
+        intensity: this.skyboxAssets.mystical.intensity
+      };
+    }
+    
+    // ADVANCED: Time-based skybox selection
+    
+    // Sunrise (0.15 - 0.25)
+    if (timeOfDay >= 0.15 && timeOfDay < 0.25) {
+      const t = (timeOfDay - 0.15) / 0.1;
+      return {
+        texture1: this.skyboxes.get('sunset'),
+        texture2: this.skyboxes.get('twilight'),
+        blend: t,
+        fogColor: this.lerpColor(
+          this.skyboxAssets.sunset.fogColor,
+          this.skyboxAssets.twilight.fogColor,
+          t
+        ),
+        intensity: 1.2
+      };
+    }
+    
+    // Dawn transition (0.25 - 0.3)
+    if (timeOfDay >= 0.25 && timeOfDay < 0.3) {
+      const t = (timeOfDay - 0.25) / 0.05;
+      return {
+        texture1: this.skyboxes.get('twilight'),
+        texture2: this.skyboxes.get('clearDay'),
+        blend: t,
+        fogColor: this.lerpColor(
+          this.skyboxAssets.twilight.fogColor,
+          this.skyboxAssets.clearDay.fogColor,
+          t
+        ),
+        intensity: 1.3
+      };
+    }
+    
+    // Day (0.3 - 0.7)
+    if (timeOfDay >= 0.3 && timeOfDay < 0.7) {
+      return {
+        texture1: this.skyboxes.get('clearDay'),
+        texture2: this.skyboxes.get('standard'),
+        blend: Math.sin((timeOfDay - 0.3) / 0.4 * Math.PI) * 0.3,
+        fogColor: this.skyboxAssets.clearDay.fogColor,
+        intensity: 1.5
+      };
+    }
+    
+    // Dusk transition (0.7 - 0.75)
+    if (timeOfDay >= 0.7 && timeOfDay < 0.75) {
+      const t = (timeOfDay - 0.7) / 0.05;
+      return {
+        texture1: this.skyboxes.get('clearDay'),
+        texture2: this.skyboxes.get('twilight'),
+        blend: t,
+        fogColor: this.lerpColor(
+          this.skyboxAssets.clearDay.fogColor,
+          this.skyboxAssets.twilight.fogColor,
+          t
+        ),
+        intensity: 1.2
+      };
+    }
+    
+    // Sunset (0.75 - 0.85)
+    if (timeOfDay >= 0.75 && timeOfDay < 0.85) {
+      const t = (timeOfDay - 0.75) / 0.1;
+      return {
+        texture1: this.skyboxes.get('twilight'),
+        texture2: this.skyboxes.get('sunset'),
+        blend: t,
+        fogColor: this.lerpColor(
+          this.skyboxAssets.twilight.fogColor,
+          this.skyboxAssets.sunset.fogColor,
+          t
+        ),
+        intensity: 1.3
+      };
+    }
+    
+    // Night (0.85 - 1.0 and 0.0 - 0.15)
+    // Use twilight skybox darkened
+    return {
+      texture1: this.skyboxes.get('twilight'),
+      texture2: this.skyboxes.get('twilight'),
+      blend: 0.0,
+      fogColor: new THREE.Color(0.05, 0.05, 0.1),
+      intensity: 0.3
+    };
+  }
+  
+  // ADVANCED: Dynamic time of day cycle
+  private timeSpeed = 0.0001; // Adjustable speed
+  private isPaused = false;
+  
+  update(deltaTime: number): void {
+    if (this.isPaused) return;
+    
+    // Advance time
+    this.timeOfDay += this.timeSpeed * deltaTime;
+    if (this.timeOfDay > 1.0) this.timeOfDay -= 1.0;
+    
+    // Update sky
+    this.updateSky(this.timeOfDay);
+  }
+  
+  // ADVANCED: Set specific time instantly
+  setTime(timeOfDay: number): void {
+    this.timeOfDay = Math.max(0, Math.min(1, timeOfDay));
+    this.updateSky(this.timeOfDay);
+  }
+  
+  // Convenience methods
+  setTimeOfDay(hour: number): void {
+    // Convert hour (0-24) to timeOfDay (0-1)
+    this.setTime(hour / 24);
+  }
+  
+  setSunrise(): void { this.setTime(0.2); }
+  setNoon(): void { this.setTime(0.5); }
+  setSunset(): void { this.setTime(0.8); }
+  setMidnight(): void { this.setTime(0.0); }
+  
+  // Control time speed
+  setTimeSpeed(speed: number): void {
+    this.timeSpeed = speed;
+  }
+  
+  pauseTime(): void { this.isPaused = true; }
+  resumeTime(): void { this.isPaused = false; }
+  
+  private getSunColor(timeOfDay: number): THREE.Color {
+    // ADVANCED: Realistic sun color based on time
+    
+    // Sunrise/Sunset: orange-red
+    if (timeOfDay < 0.25 || timeOfDay > 0.75) {
+      return new THREE.Color(1.0, 0.6, 0.3);
+    }
+    
+    // Day: white-yellow
+    if (timeOfDay >= 0.3 && timeOfDay <= 0.7) {
+      return new THREE.Color(1.0, 0.98, 0.9);
+    }
+    
+    // Transition periods: blend
+    if (timeOfDay >= 0.25 && timeOfDay < 0.3) {
+      const t = (timeOfDay - 0.25) / 0.05;
+      return this.lerpColor(
+        new THREE.Color(1.0, 0.6, 0.3),
+        new THREE.Color(1.0, 0.98, 0.9),
+        t
+      );
+    }
+    
+    if (timeOfDay > 0.7 && timeOfDay <= 0.75) {
+      const t = (timeOfDay - 0.7) / 0.05;
+      return this.lerpColor(
+        new THREE.Color(1.0, 0.98, 0.9),
+        new THREE.Color(1.0, 0.6, 0.3),
+        t
+      );
+    }
+    
+    return new THREE.Color(1, 1, 1);
+  }
+  
+  private updateSceneLighting(
+    sunDir: THREE.Vector3, 
+    sunColor: THREE.Color,
+    skyConfig: SkyConfig
+  ): void {
+    
+    // Update directional light (sun)
+    if (scene.getObjectByName('sun')) {
+      const sun = scene.getObjectByName('sun') as THREE.DirectionalLight;
+      sun.position.copy(sunDir.multiplyScalar(100));
+      sun.color.copy(sunColor);
+      sun.intensity = skyConfig.intensity;
+    }
+    
+    // Update hemisphere light
+    if (scene.getObjectByName('hemisphere')) {
+      const hemi = scene.getObjectByName('hemisphere') as THREE.HemisphereLight;
+      hemi.intensity = 0.3 + skyConfig.intensity * 0.2;
+    }
+  }
+  
+  private lerpColor(color1: THREE.Color, color2: THREE.Color, t: number): THREE.Color {
+    return new THREE.Color(
+      color1.r * (1 - t) + color2.r * t,
+      color1.g * (1 - t) + color2.g * t,
+      color1.b * (1 - t) + color2.b * t
+    );
+  }
+}
+```
+
+---
+
+### V.2 Weather System Integration
+
+```typescript
+// File: src/world/WeatherSystem.ts
+// ADVANCED: Weather effects with sky system
+
+class WeatherSystem {
+  private skySystem: AdvancedSkySystem;
+  private currentWeather: WeatherType = 'clear';
+  private particleSystem: THREE.Points;
+  
+  // ADVANCED: Weather types with sky modifications
+  private weatherConfigs = {
+    clear: {
+      skyboxModifier: 1.0,
+      fogDensity: 0.0015,
+      particleCount: 0
+    },
+    
+    cloudy: {
+      skyboxModifier: 0.7, // Darken sky
+      fogDensity: 0.003,
+      particleCount: 0
+    },
+    
+    rain: {
+      skyboxModifier: 0.5,
+      fogDensity: 0.005,
+      particleCount: 5000,
+      particleSpeed: 20,
+      particleColor: new THREE.Color(0.7, 0.7, 0.8)
+    },
+    
+    storm: {
+      skyboxModifier: 0.3,
+      fogDensity: 0.008,
+      particleCount: 10000,
+      particleSpeed: 30,
+      particleColor: new THREE.Color(0.6, 0.6, 0.7),
+      lightning: true
+    },
+    
+    snow: {
+      skyboxModifier: 0.9,
+      fogDensity: 0.004,
+      particleCount: 3000,
+      particleSpeed: 5,
+      particleColor: new THREE.Color(1, 1, 1)
+    },
+    
+    fog: {
+      skyboxModifier: 0.4,
+      fogDensity: 0.015,
+      particleCount: 0
+    }
+  };
+  
+  setWeather(weather: WeatherType): void {
+    this.currentWeather = weather;
+    const config = this.weatherConfigs[weather];
+    
+    // Modify sky brightness
+    this.skySystem.skyMaterial.uniforms.exposure.value = config.skyboxModifier;
+    
+    // Update fog
+    scene.fog.density = config.fogDensity;
+    
+    // Update particles
+    if (config.particleCount > 0) {
+      this.createWeatherParticles(config);
+    } else {
+      this.removeWeatherParticles();
+    }
+  }
+  
+  private createWeatherParticles(config: WeatherConfig): void {
+    const geometry = new THREE.BufferGeometry();
+    const positions = new Float32Array(config.particleCount * 3);
+    
+    for (let i = 0; i < config.particleCount * 3; i += 3) {
+      positions[i] = Math.random() * 200 - 100;
+      positions[i + 1] = Math.random() * 100;
+      positions[i + 2] = Math.random() * 200 - 100;
+    }
+    
+    geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    
+    const material = new THREE.PointsMaterial({
+      color: config.particleColor,
+      size: 0.5,
+      transparent: true,
+      opacity: 0.6
+    });
+    
+    this.particleSystem = new THREE.Points(geometry, material);
+    scene.add(this.particleSystem);
+  }
+}
+```
+
+---
+
+### V.3 Complete Sky Integration Example
+
+```typescript
+// USAGE: Complete sky system setup
+
+// Initialize
+const skySystem = new AdvancedSkySystem();
+await skySystem.initialize();
+
+// Set initial time (noon)
+skySystem.setNoon();
+
+// Start day/night cycle
+skySystem.setTimeSpeed(0.0001); // 1 full day = ~16 minutes real time
+skySystem.resumeTime();
+
+// In your game loop
+function animate() {
+  const deltaTime = clock.getDelta() * 1000;
+  
+  // Update sky
+  skySystem.update(deltaTime);
+  
+  // ... rest of game loop
+}
+
+// Manual time control
+skySystem.setSunrise(); // Beautiful sunrise with your sunset skybox
+skySystem.setNoon(); // Clear day with your blue skybox
+skySystem.setSunset(); // Gorgeous sunset
+skySystem.setMidnight(); // Dark twilight sky
+
+// Weather control
+const weather = new WeatherSystem(skySystem);
+weather.setWeather('rain'); // Rainy day
+weather.setWeather('clear'); // Clear sky
+
+// Special biome sky
+skySystem.updateSky(0.5, 'clear', 'magical'); // Use green mystical sky!
+```
+
+---
+
+### V.4 Sky System Features Summary
+
+✅ **ALL 5 Skyboxes Used**:
+- BlueSkySkybox.png - Day sky
+- SkySkybox.png - Standard sky
+- GreenSky.png - Magical biomes
+- PurplyBlueSky.png - Dawn/dusk
+- SunsetSky.png - Sunrise/sunset
+
+✅ **Smooth Transitions**:
+- Automatic blending between skyboxes
+- Time-based selection
+- Weather-based modifications
+- Biome-specific overrides
+
+✅ **Dynamic Lighting**:
+- Sun position follows time of day
+- Sun color changes (orange sunrise → white noon → red sunset)
+- Scene lighting updates automatically
+- Fog color matches sky
+
+✅ **Advanced Features**:
+- Atmospheric scattering shader
+- Sun disc rendering
+- Horizon gradient
+- Exposure control
+- HDR tone mapping
+
+✅ **Easy Controls**:
+- Pause/resume time
+- Set specific time
+- Adjust cycle speed
+- Manual time control
+
+**YOUR WORLD NOW HAS PROFESSIONAL SKY SYSTEM USING ALL YOUR SKYBOX ASSETS! 🌤️**
+
