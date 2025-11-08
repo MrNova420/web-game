@@ -243,7 +243,7 @@ export class AdvancedRenderer {
   /**
    * Get rendering statistics
    */
-  public getStats(): { memory: object; render: object } {
+  public getStats(): Record<string, unknown> {
     return {
       memory: this.renderer.info.memory,
       render: this.renderer.info.render,

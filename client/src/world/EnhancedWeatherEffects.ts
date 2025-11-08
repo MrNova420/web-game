@@ -294,7 +294,7 @@ export class EnhancedWeatherEffects {
   /**
    * Get statistics
    */
-  public getStats(): { lightningFlashes: number; windStrength: number } {
+  public getStats(): Record<string, unknown> {
     return {
       lightningFlashes: this.lightningFlashes,
       windStrength: this.windStrength,

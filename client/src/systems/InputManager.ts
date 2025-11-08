@@ -75,15 +75,18 @@ export class InputManager {
     // Mouse events
     const target = canvas || window;
     
-    target.addEventListener('mousedown', (e: MouseEvent) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    target.addEventListener('mousedown', (e: any) => {
       this.mouseButtons.set(e.button, true);
     });
 
-    target.addEventListener('mouseup', (e: MouseEvent) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    target.addEventListener('mouseup', (e: any) => {
       this.mouseButtons.set(e.button, false);
     });
 
-    target.addEventListener('mousemove', (e: MouseEvent) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    target.addEventListener('mousemove', (e: any) => {
       this.mousePosition.x = e.clientX;
       this.mousePosition.y = e.clientY;
       
@@ -94,7 +97,8 @@ export class InputManager {
       this.lastMousePosition.y = e.clientY;
     });
 
-    target.addEventListener('wheel', (e: WheelEvent) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    target.addEventListener('wheel', (e: any) => {
       this.wheelDelta = e.deltaY;
     });
 

@@ -3,7 +3,8 @@
  * Central hub for system lifecycle and inter-system communication
  */
 export class IntegrationManager {
-  private systems: Map<string, unknown> = new Map();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private systems: Map<string, any> = new Map();
   private eventBus: Map<string, Function[]> = new Map();
   private initOrder: string[] = [];
   private updateOrder: string[] = [];
@@ -16,7 +17,8 @@ export class IntegrationManager {
   /**
    * Register a system with the manager
    */
-  public registerSystem(name: string, system: unknown, dependencies: string[] = []): void {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  public registerSystem(name: string, system: any, dependencies: string[] = []): void {
     if (this.systems.has(name)) {
       console.warn(`[IntegrationManager] System ${name} already registered`);
       return;
@@ -204,7 +206,8 @@ export class IntegrationManager {
     
     for (const [name, system] of this.systems) {
       if (typeof system.getStats === 'function') {
-        stats.systems[name] = system.getStats();
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (stats.systems as any)[name] = system.getStats();
       }
     }
     

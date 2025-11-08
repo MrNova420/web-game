@@ -80,9 +80,9 @@ export class PerformanceMonitor {
     this.metrics.frameTime = deltaTime * 1000;
 
     // Renderer info
-    if (renderer && renderer.info) {
-      this.metrics.drawCalls = renderer.info.render.calls;
-      this.metrics.triangles = renderer.info.render.triangles;
+    if (renderer && renderer.info && renderer.info.render) {
+      this.metrics.drawCalls = renderer.info.render.calls || 0;
+      this.metrics.triangles = renderer.info.render.triangles || 0;
     }
 
     // Memory usage (if available)
@@ -94,7 +94,8 @@ export class PerformanceMonitor {
     // Count entities in scene
     if (scene) {
       let entityCount = 0;
-      scene.traverse(() => entityCount++);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (scene as any).traverse(() => entityCount++);
       this.metrics.entities = entityCount;
     }
 

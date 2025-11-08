@@ -193,7 +193,7 @@ export class EnvironmentEffects {
    */
   public setAmbientOcclusion(enabled: boolean): void {
     if (this.aoPass) {
-      this.aoPass.enabled = enabled;
+      (this.aoPass as { enabled: boolean }).enabled = enabled;
     }
   }
   
@@ -202,8 +202,8 @@ export class EnvironmentEffects {
    */
   public setDepthOfField(enabled: boolean, focusDistance: number = 10): void {
     if (this.dofPass) {
-      this.dofPass.enabled = enabled;
-      this.dofPass.uniforms.focus.value = focusDistance;
+      (this.dofPass as { enabled: boolean; uniforms: { focus: { value: number } } }).enabled = enabled;
+      (this.dofPass as { enabled: boolean; uniforms: { focus: { value: number } } }).uniforms.focus.value = focusDistance;
     }
   }
   
@@ -212,7 +212,8 @@ export class EnvironmentEffects {
    */
   public setMotionBlur(enabled: boolean): void {
     if (this.motionBlurPass) {
-      this.motionBlurPass.enabled = enabled;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (this.motionBlurPass as any).enabled = enabled;
     }
   }
   
@@ -224,7 +225,8 @@ export class EnvironmentEffects {
     
     // Update composer if available
     if (this.composer) {
-      this.composer.render(deltaTime);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (this.composer as any).render(deltaTime);
     }
   }
   

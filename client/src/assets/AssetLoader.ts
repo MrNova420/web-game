@@ -12,7 +12,10 @@ export class AssetLoader {
 
   async loadModel(path: string): Promise<THREE.Object3D> {
     if (this.cache.has(path)) {
-      return this.cache.get(path).clone();
+      const cached = this.cache.get(path);
+      if (cached && cached instanceof THREE.Object3D) {
+        return cached.clone();
+      }
     }
 
     const extension = path.split('.').pop()?.toLowerCase();
@@ -122,7 +125,10 @@ export class AssetLoader {
 
   async loadTexture(path: string): Promise<THREE.Texture> {
     if (this.cache.has(path)) {
-      return this.cache.get(path);
+      const cached = this.cache.get(path);
+      if (cached && cached instanceof THREE.Texture) {
+        return cached;
+      }
     }
 
     const texture = await this.textureLoader.loadAsync(path);

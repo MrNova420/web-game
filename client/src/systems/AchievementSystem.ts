@@ -298,7 +298,7 @@ export class AchievementSystem {
 
     switch (eventType) {
       case 'enemy_killed': {
-        const killAchievement = this.updateProgress(playerId, 'kill', eventData.enemyType);
+        const killAchievement = this.updateProgress(playerId, 'kill', eventData.enemyType || 'unknown');
         if (killAchievement) unlockedAchievements.push(killAchievement);
         
         const anyKillAchievement = this.updateProgress(playerId, 'kill', 'any');
@@ -307,7 +307,7 @@ export class AchievementSystem {
       }
 
       case 'item_collected': {
-        const collectAchievement = this.updateProgress(playerId, 'collect', eventData.itemType, eventData.amount);
+        const collectAchievement = this.updateProgress(playerId, 'collect', eventData.itemType || 'unknown', eventData.amount);
         if (collectAchievement) unlockedAchievements.push(collectAchievement);
         break;
       }

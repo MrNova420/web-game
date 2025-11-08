@@ -643,10 +643,11 @@ export class GameEngine {
   /**
    * Get statistics
    */
-  public getStats(): { fps: number; deltaTime: number; sceneObjects: number } {
+  public getStats(): Record<string, unknown> {
     return {
       fps: Math.round(1 / this.deltaTime),
       deltaTime: this.deltaTime,
+      sceneObjects: this.scene.children.length,
       isPaused: this.isPaused,
       systemStats: this.integrationManager.getStats()
     };

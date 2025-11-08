@@ -205,7 +205,7 @@ export class GraphicsQualityManager {
   /**
    * Get rendering statistics
    */
-  public getStats(): { quality: string; averageFPS: number; settings: Record<string, unknown> } {
+  public getStats(): Record<string, unknown> {
     return {
       quality: this.currentQuality,
       averageFPS: this.getAverageFPS(),

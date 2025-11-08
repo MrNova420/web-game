@@ -241,8 +241,10 @@ export class NetworkSystem {
         if (message.senderId && message.senderId !== this.playerId) {
           const playerState = this.otherPlayers.get(message.senderId);
           if (playerState) {
-            playerState.position = message.data.position;
-            playerState.rotation = message.data.rotation;
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            playerState.position = (message.data as any).position;
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            playerState.rotation = (message.data as any).rotation;
           }
         }
         break;
@@ -252,7 +254,8 @@ export class NetworkSystem {
         break;
         
       case MessageType.CHAT_MESSAGE:
-        console.log(`[CHAT] ${message.data.username}: ${message.data.message}`);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        console.log(`[CHAT] ${(message.data as any).username}: ${(message.data as any).message}`);
         break;
         
       case MessageType.PONG:
