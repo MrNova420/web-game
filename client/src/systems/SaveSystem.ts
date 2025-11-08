@@ -264,7 +264,7 @@ export class SaveSystem {
         level: data.player.stats.level,
         playtime: 0 // Could track this in save data
       };
-    } catch (error) {
+    } catch (_error) {
       return null;
     }
   }
@@ -279,7 +279,7 @@ export class SaveSystem {
       const total = 5 * 1024 * 1024; // 5MB typical localStorage limit
       
       return { used, total };
-    } catch (error) {
+    } catch (_error) {
       return { used: 0, total: 0 };
     }
   }

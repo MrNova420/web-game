@@ -155,7 +155,7 @@ export class GrassSystem {
   /**
    * Update grass animation (wind effect)
    */
-  update(deltaTime: number, windDirection?: THREE.Vector3, windStrength?: number) {
+  update(_deltaTime: number, _windDirection?: THREE.Vector3, _windStrength?: number) {
     // Wind animation can be added via shader if needed
     // For now, we keep grass static as we're using real models
   }

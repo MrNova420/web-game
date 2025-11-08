@@ -178,7 +178,7 @@ export class EnhancedWeatherEffects {
   /**
    * Update weather effects
    */
-  public update(deltaTime: number, weather: string, playerPosition: THREE.Vector3): void {
+  public update(deltaTime: number, weather: string, _playerPosition: THREE.Vector3): void {
     const currentTime = Date.now();
     
     // Update based on weather type

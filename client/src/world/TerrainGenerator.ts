@@ -28,7 +28,8 @@ export class TerrainGenerator {
     const centerX = chunkX * this.chunkSize + this.chunkSize / 2;
     const centerZ = chunkZ * this.chunkSize + this.chunkSize / 2;
     const chunkBiome = this.getBiomeAt(centerX, centerZ);
-    const biomeColor = new THREE.Color(this.biomeSystem.getBiomeColor(chunkBiome));
+    // Get biome color for future use
+    // const biomeColor = new THREE.Color(this.biomeSystem.getBiomeColor(chunkBiome));
 
     for (let i = 0; i < vertices.length; i += 3) {
       const worldX = vertices[i] + chunkX * this.chunkSize;

@@ -1,5 +1,3 @@
-import * as THREE from 'three';
-
 /**
  * IntegrationManager - Coordinates all game systems
  * Central hub for system lifecycle and inter-system communication
@@ -175,7 +173,7 @@ export class IntegrationManager {
   public pauseAll(): void {
     console.log('[IntegrationManager] Pausing all systems...');
     
-    for (const [name, system] of this.systems) {
+    for (const [_name, system] of this.systems) {
       if (typeof system.pause === 'function') {
         system.pause();
       }
@@ -188,7 +186,7 @@ export class IntegrationManager {
   public resumeAll(): void {
     console.log('[IntegrationManager] Resuming all systems...');
     
-    for (const [name, system] of this.systems) {
+    for (const [_name, system] of this.systems) {
       if (typeof system.resume === 'function') {
         system.resume();
       }

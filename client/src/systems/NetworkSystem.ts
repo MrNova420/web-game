@@ -215,7 +215,7 @@ export class NetworkSystem {
   /**
    * Process incoming messages
    */
-  update(deltaTime: number) {
+  update(_deltaTime: number) {
     // Process message queue
     while (this.messageQueue.length > 0) {
       const message = this.messageQueue.shift();

@@ -52,7 +52,7 @@ export class AssetLoader {
         const materials = await this.mtlLoader.loadAsync(mtlPath);
         materials.preload();
         this.objLoader.setMaterials(materials);
-      } catch (e) {
+      } catch (_e) {
         // MTL file doesn't exist or failed to load, continue without materials
         console.warn(`[AssetLoader] Could not load MTL for ${path}, using default material`);
       }

@@ -41,7 +41,7 @@ export class ChunkManager {
   private lastUpdatePosition: THREE.Vector3 = new THREE.Vector3(999999, 0, 999999);
   private updateThreshold = 32; // Update when player moves 32 units (half a chunk)
   
-  update(deltaTime: number) {
+  update(_deltaTime: number) {
     if (!this.scene) return;
     
     // CRITICAL PERFORMANCE FIX: Don't run updateChunks every frame!
@@ -107,7 +107,7 @@ export class ChunkManager {
       }
     }
 
-    for (const [key, chunkGroup] of this.chunks.entries()) {
+    for (const [key, _chunkGroup] of this.chunks.entries()) {
       const [cx, cz] = key.split(',').map(Number);
       const distance = Math.max(
         Math.abs(cx - chunkX),

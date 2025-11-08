@@ -143,7 +143,7 @@ export class VolumetricFogSystem {
   /**
    * Update fog each frame (for animated effects)
    */
-  public update(deltaTime: number): void {
+  public update(_deltaTime: number): void {
     if (!this.enabled) return;
     
     // Subtle fog animation (breathing effect)

@@ -165,7 +165,7 @@ export class PlayerController {
       }
     }, { passive: false });
     
-    joystickContainer.addEventListener('touchend', (e) => {
+    joystickContainer.addEventListener('touchend', (_e) => {
       this.moveTouchId = null;
       this.moveForward = false;
       this.moveBackward = false;
