@@ -266,15 +266,19 @@ export class GameEngine {
     // Create player controller for WASD + mouse controls
     this.playerController = new PlayerController(this.camera, startPosition);
     
-    // Add a test cube to verify rendering is working
-    console.log('[GameEngine] Adding test cube to verify rendering...');
-    const testGeometry = new THREE.BoxGeometry(5, 5, 5);
-    const testMaterial = new THREE.MeshStandardMaterial({ color: 0xff0000 });
-    const testCube = new THREE.Mesh(testGeometry, testMaterial);
-    testCube.position.set(0, 2.5, 0);
-    testCube.name = 'test_cube';
-    this.scene.add(testCube);
-    console.log('[GameEngine] Test cube added at origin (0, 2.5, 0)');
+    // ASSET TEST: Load one actual model to verify assets work (NO PLACEHOLDER GEOMETRY!)
+    console.log('[GameEngine] Loading test asset to verify rendering...');
+    this.assetLoader.loadModel('/extracted_assets/KayKit_DungeonRemastered/Assets/gltf/barrel_small.gltf')
+      .then((model) => {
+        model.position.set(0, 0, 0);
+        model.scale.setScalar(2); // Make it visible
+        this.scene.add(model);
+        console.log('[GameEngine] ✓ Test asset loaded successfully at origin - assets are working!');
+      })
+      .catch((error) => {
+        console.error('[GameEngine] ✗ Failed to load test asset:', error);
+        console.error('[GameEngine] ✗ This means asset loading is broken - check paths!');
+      });
     
     console.log('[GameEngine] ✓ Player controller initialized - WASD + Mouse controls active');
     console.log('[GameEngine] ✓ Camera looking at terrain origin (0, 0, 0)');

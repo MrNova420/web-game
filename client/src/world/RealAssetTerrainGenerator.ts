@@ -36,59 +36,59 @@ export class RealAssetTerrainGenerator {
   private useGPUInstancing: boolean = true;
   private cpuMeshCache = new Map<string, THREE.Object3D>();
   
-  // ACTUAL ground tile models organized by biome
+  // ACTUAL ground tile models organized by biome - USING GLTF (better for web than OBJ)
   private terrainTiles = {
     forest: {
       // Use dirt and grass tiles for forest floor
       tiles: [
-        '/extracted_assets/KayKit_DungeonRemastered/Assets/obj/floor_dirt_large.obj',
-        '/extracted_assets/KayKit_DungeonRemastered/Assets/obj/floor_dirt_small_A.obj',
-        '/extracted_assets/KayKit_DungeonRemastered/Assets/obj/floor_dirt_small_B.obj',
-        '/extracted_assets/KayKit_DungeonRemastered/Assets/obj/floor_dirt_small_weeds.obj',
+        '/extracted_assets/KayKit_DungeonRemastered/Assets/gltf/floor_dirt_large.gltf',
+        '/extracted_assets/KayKit_DungeonRemastered/Assets/gltf/floor_dirt_small_A.gltf',
+        '/extracted_assets/KayKit_DungeonRemastered/Assets/gltf/floor_dirt_small_B.gltf',
+        '/extracted_assets/KayKit_DungeonRemastered/Assets/gltf/floor_dirt_small_weeds.gltf',
       ]
     },
     plains: {
       // Use grass-like tiles
       tiles: [
-        '/extracted_assets/KayKit_DungeonRemastered/Assets/obj/floor_dirt_small_weeds.obj',
-        '/extracted_assets/KayKit_DungeonRemastered/Assets/obj/floor_tile_small_weeds_B.obj',
+        '/extracted_assets/KayKit_DungeonRemastered/Assets/gltf/floor_dirt_small_weeds.gltf',
+        '/extracted_assets/KayKit_DungeonRemastered/Assets/gltf/floor_tile_small_weeds_B.gltf',
       ]
     },
     mountain: {
       // Use stone tiles
       tiles: [
-        '/extracted_assets/KayKit_DungeonRemastered/Assets/obj/floor_tile_small.obj',
-        '/extracted_assets/KayKit_DungeonRemastered/Assets/obj/floor_tile_large_rocks.obj',
-        '/extracted_assets/KayKit_DungeonRemastered/Assets/obj/floor_tile_small_broken_A.obj',
+        '/extracted_assets/KayKit_DungeonRemastered/Assets/gltf/floor_tile_small.gltf',
+        '/extracted_assets/KayKit_DungeonRemastered/Assets/gltf/floor_tile_large_rocks.gltf',
+        '/extracted_assets/KayKit_DungeonRemastered/Assets/gltf/floor_tile_small_broken_A.gltf',
       ]
     },
     desert: {
       // Use sandy/dirt tiles
       tiles: [
-        '/extracted_assets/KayKit_DungeonRemastered/Assets/obj/floor_dirt_large.obj',
-        '/extracted_assets/KayKit_DungeonRemastered/Assets/obj/floor_dirt_small_A.obj',
+        '/extracted_assets/KayKit_DungeonRemastered/Assets/gltf/floor_dirt_large.gltf',
+        '/extracted_assets/KayKit_DungeonRemastered/Assets/gltf/floor_dirt_small_A.gltf',
       ]
     },
     swamp: {
       // Use wood and dirt tiles
       tiles: [
-        '/extracted_assets/KayKit_DungeonRemastered/Assets/obj/floor_wood_large.obj',
-        '/extracted_assets/KayKit_DungeonRemastered/Assets/obj/floor_dirt_small_weeds.obj',
-        '/extracted_assets/KayKit_DungeonRemastered/Assets/obj/floor_wood_small.obj',
+        '/extracted_assets/KayKit_DungeonRemastered/Assets/gltf/floor_wood_large.gltf',
+        '/extracted_assets/KayKit_DungeonRemastered/Assets/gltf/floor_dirt_small_weeds.gltf',
+        '/extracted_assets/KayKit_DungeonRemastered/Assets/gltf/floor_wood_small.gltf',
       ]
     },
     tundra: {
       // Use stone tiles for frozen ground
       tiles: [
-        '/extracted_assets/KayKit_DungeonRemastered/Assets/obj/floor_tile_small.obj',
-        '/extracted_assets/KayKit_DungeonRemastered/Assets/obj/floor_tile_small_corner.obj',
+        '/extracted_assets/KayKit_DungeonRemastered/Assets/gltf/floor_tile_small.gltf',
+        '/extracted_assets/KayKit_DungeonRemastered/Assets/gltf/floor_tile_small_corner.gltf',
       ]
     },
     mystical: {
       // Use decorated tiles
       tiles: [
-        '/extracted_assets/KayKit_DungeonRemastered/Assets/obj/floor_tile_small_decorated.obj',
-        '/extracted_assets/KayKit_DungeonRemastered/Assets/obj/floor_tile_small.obj',
+        '/extracted_assets/KayKit_DungeonRemastered/Assets/gltf/floor_tile_small_decorated.gltf',
+        '/extracted_assets/KayKit_DungeonRemastered/Assets/gltf/floor_tile_small.gltf',
       ]
     }
   };
@@ -177,17 +177,10 @@ export class RealAssetTerrainGenerator {
           });
         }
         
-        // If still no geometry, create a fallback plane with texture
+        // If still no geometry, log error and skip (NO FALLBACK GEOMETRY - we only use real assets!)
         if (!geometry) {
-          console.warn(`[TerrainGenerator] No mesh geometry found in ${tilePath}, creating fallback plane`);
-          geometry = new THREE.PlaneGeometry(2, 2);
-          geometry.rotateX(-Math.PI / 2);  // Make it horizontal
-          material = new THREE.MeshStandardMaterial({ 
-            color: 0x888888,
-            roughness: 0.7,
-            metalness: 0.1,
-            side: THREE.DoubleSide // RENDERING FIX: Prevent see-through issues
-          });
+          console.error(`[TerrainGenerator] ✗ FAILED: No mesh geometry found in ${tilePath} - SKIPPING (no fallback geometry)`);
+          continue; // Skip this tile path entirely
         }
         
         if (geometry && material) {

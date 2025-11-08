@@ -21,20 +21,20 @@ export class VegetationManager {
   
   private vegetationAssets = {
     trees: [
-      '/extracted_assets/Stylized_Nature_MegaKit/OBJ/CommonTree_1.obj',
-      '/extracted_assets/Stylized_Nature_MegaKit/OBJ/CommonTree_5.obj',
-      '/extracted_assets/Stylized_Nature_MegaKit/OBJ/TwistedTree_1.obj',
-      '/extracted_assets/Stylized_Nature_MegaKit/OBJ/TwistedTree_3.obj',
+      '/extracted_assets/Stylized_Nature_MegaKit/glTF/CommonTree_1.gltf',
+      '/extracted_assets/Stylized_Nature_MegaKit/glTF/CommonTree_5.gltf',
+      '/extracted_assets/Stylized_Nature_MegaKit/glTF/TwistedTree_1.gltf',
+      '/extracted_assets/Stylized_Nature_MegaKit/glTF/TwistedTree_3.gltf',
     ],
     bushes: [
-      '/extracted_assets/Stylized_Nature_MegaKit/OBJ/Bush_Common.obj',
+      '/extracted_assets/Stylized_Nature_MegaKit/glTF/Bush_Common.gltf',
     ],
     rocks: [
-      '/extracted_assets/Stylized_Nature_MegaKit/OBJ/Rock_Medium_1.obj',
+      '/extracted_assets/Stylized_Nature_MegaKit/glTF/Rock_Medium_1.gltf',
     ],
     plants: [
-      '/extracted_assets/Stylized_Nature_MegaKit/OBJ/Plant_1.obj',
-      '/extracted_assets/Stylized_Nature_MegaKit/OBJ/Plant_7.obj',
+      '/extracted_assets/Stylized_Nature_MegaKit/glTF/Plant_1.gltf',
+      '/extracted_assets/Stylized_Nature_MegaKit/glTF/Plant_7.gltf',
     ]
   };
 
