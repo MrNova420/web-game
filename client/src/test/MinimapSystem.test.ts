@@ -33,7 +33,6 @@ describe('MinimapSystem', () => {
   });
 
   it('should zoom in/out', () => {
-    const initialZoom = minimapSystem.getZoom();
     minimapSystem.setZoom(2.0);
     expect(minimapSystem.getZoom()).toBe(2.0);
   });

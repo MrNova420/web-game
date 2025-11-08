@@ -114,8 +114,8 @@ async function startGame() {
     console.log('\n=================================================');
     
     // Expose to window for debugging
-    (window as any).gameEngine = engine;
-    (window as any).perfOptimizer = perfOptimizer;
+    (window as { gameEngine?: unknown; perfOptimizer?: unknown }).gameEngine = engine;
+    (window as { gameEngine?: unknown; perfOptimizer?: unknown }).perfOptimizer = perfOptimizer;
     
     // Handle cleanup
     window.addEventListener('beforeunload', () => {

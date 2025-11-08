@@ -183,7 +183,7 @@ export class GraphicsQualityManager {
   /**
    * Get quality settings for current level
    */
-  public getSettings(): any {
+  public getSettings(): Record<string, unknown> {
     return { ...this.qualitySettings[this.currentQuality] };
   }
   
@@ -205,7 +205,7 @@ export class GraphicsQualityManager {
   /**
    * Get rendering statistics
    */
-  public getStats(): any {
+  public getStats(): Record<string, unknown> {
     return {
       quality: this.currentQuality,
       averageFPS: this.getAverageFPS(),

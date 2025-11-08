@@ -9,7 +9,7 @@ import { BiomeSystem } from './BiomeSystem';
  */
 export class AssetBasedTerrainGenerator {
   private assetLoader: AssetLoader;
-  private noise: any;
+  private noise: (x: number, y: number) => number;
   private biomeSystem: BiomeSystem;
   private chunkSize = 64;
   private heightScale = 20;

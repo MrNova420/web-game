@@ -76,7 +76,7 @@ export class LODManager {
   /**
    * Create billboard sprite for distant rendering
    */
-  private createBillboard(object: THREE.Object3D): THREE.Sprite {
+  private createBillboard(_object: THREE.Object3D): THREE.Sprite {
     // Create a simple sprite to represent distant objects
     const canvas = document.createElement('canvas');
     canvas.width = 32;
@@ -105,7 +105,7 @@ export class LODManager {
     
     const cameraPosition = this.camera.position;
     
-    this.lodObjects.forEach((lodObj, id) => {
+    this.lodObjects.forEach((lodObj, _id) => {
       const distance = cameraPosition.distanceTo(lodObj.object.position);
       
       // Determine LOD level based on distance

@@ -136,7 +136,8 @@ export class UltimateQualityOptimizer {
    * Optimize materials for best quality
    */
   public optimizeMaterials(): void {
-    const settings = this.settings[this.currentQuality];
+    // Get quality settings for material optimization
+    // const settings = this.settings[this.currentQuality];
     
     this.scene.traverse((object) => {
       if (object instanceof THREE.Mesh) {
@@ -344,7 +345,7 @@ export class UltimateQualityOptimizer {
   /**
    * Get current settings
    */
-  public getSettings(): any {
+  public getSettings(): Record<string, unknown> {
     return {
       quality: this.currentQuality,
       ...this.settings[this.currentQuality],
@@ -355,7 +356,7 @@ export class UltimateQualityOptimizer {
   /**
    * Get performance statistics
    */
-  public getStats(): any {
+  public getStats(): Record<string, unknown> {
     return {
       quality: this.currentQuality,
       avgFPS: this.getAverageFPS(),

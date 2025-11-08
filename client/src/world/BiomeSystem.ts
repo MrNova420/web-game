@@ -1,5 +1,3 @@
-import * as THREE from 'three';
-
 export interface BiomeConfig {
   name: string;
   color: number;

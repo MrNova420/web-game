@@ -293,47 +293,54 @@ export class AchievementSystem {
   /**
    * Check for achievements
    */
-  checkAchievements(playerId: string, eventType: string, eventData: any): Achievement[] {
+  checkAchievements(playerId: string, eventType: string, eventData: { enemyType?: string; itemType?: string; amount?: number; newLevel?: number }): Achievement[] {
     const unlockedAchievements: Achievement[] = [];
 
     switch (eventType) {
-      case 'enemy_killed':
-        const killAchievement = this.updateProgress(playerId, 'kill', eventData.enemyType);
+      case 'enemy_killed': {
+        const killAchievement = this.updateProgress(playerId, 'kill', eventData.enemyType || 'unknown');
         if (killAchievement) unlockedAchievements.push(killAchievement);
         
         const anyKillAchievement = this.updateProgress(playerId, 'kill', 'any');
         if (anyKillAchievement) unlockedAchievements.push(anyKillAchievement);
         break;
+      }
 
-      case 'item_collected':
-        const collectAchievement = this.updateProgress(playerId, 'collect', eventData.itemType, eventData.amount);
+      case 'item_collected': {
+        const collectAchievement = this.updateProgress(playerId, 'collect', eventData.itemType || 'unknown', eventData.amount);
         if (collectAchievement) unlockedAchievements.push(collectAchievement);
         break;
+      }
 
-      case 'item_crafted':
+      case 'item_crafted': {
         const craftAchievement = this.updateProgress(playerId, 'craft', 'any');
         if (craftAchievement) unlockedAchievements.push(craftAchievement);
         break;
+      }
 
-      case 'level_up':
+      case 'level_up': {
         const levelAchievement = this.updateProgress(playerId, 'level', 'level', eventData.newLevel);
         if (levelAchievement) unlockedAchievements.push(levelAchievement);
         break;
+      }
 
-      case 'quest_completed':
+      case 'quest_completed': {
         const questAchievement = this.updateProgress(playerId, 'quest', 'complete');
         if (questAchievement) unlockedAchievements.push(questAchievement);
         break;
+      }
 
-      case 'biome_discovered':
+      case 'biome_discovered': {
         const exploreAchievement = this.updateProgress(playerId, 'explore', 'biomes');
         if (exploreAchievement) unlockedAchievements.push(exploreAchievement);
         break;
+      }
 
-      case 'dungeon_entered':
+      case 'dungeon_entered': {
         const dungeonAchievement = this.updateProgress(playerId, 'explore', 'dungeon');
         if (dungeonAchievement) unlockedAchievements.push(dungeonAchievement);
         break;
+      }
     }
 
     return unlockedAchievements;

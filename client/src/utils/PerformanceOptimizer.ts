@@ -30,7 +30,7 @@ export class PerformanceOptimizer {
   
   private detectDeviceTier(): void {
     // Check device memory
-    const memory = (performance as any).memory?.jsHeapSizeLimit || 0;
+    const memory = (performance as { memory?: { jsHeapSizeLimit?: number } }).memory?.jsHeapSizeLimit || 0;
     const memoryGB = memory / (1024 * 1024 * 1024);
     
     // Check hardware concurrency (CPU cores)

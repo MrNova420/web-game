@@ -8,7 +8,7 @@ export class VolumetricFogSystem {
   private scene: THREE.Scene;
   private camera: THREE.PerspectiveCamera;
   private fogMesh: THREE.Mesh | null = null;
-  private fogUniforms: any;
+  private fogUniforms!: { [key: string]: { value: unknown } };
   private enabled: boolean = true;
   
   // Fog parameters
@@ -143,7 +143,7 @@ export class VolumetricFogSystem {
   /**
    * Update fog each frame (for animated effects)
    */
-  public update(deltaTime: number): void {
+  public update(_deltaTime: number): void {
     if (!this.enabled) return;
     
     // Subtle fog animation (breathing effect)
@@ -158,7 +158,7 @@ export class VolumetricFogSystem {
   /**
    * Get current fog settings
    */
-  public getSettings(): any {
+  public getSettings(): Record<string, unknown> {
     return {
       enabled: this.enabled,
       density: this.fogDensity,

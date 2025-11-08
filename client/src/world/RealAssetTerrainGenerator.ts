@@ -17,7 +17,7 @@ import { BiomeSystem } from './BiomeSystem';
  */
 export class RealAssetTerrainGenerator {
   private assetLoader: AssetLoader;
-  private noise: any;
+  private noise: (x: number, y: number) => number;
   private biomeSystem: BiomeSystem;
   private chunkSize = 64;
   private tileSize = 2; // Each tile is roughly 2x2 units

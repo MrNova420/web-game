@@ -135,7 +135,7 @@ export class TileBasedTerrain {
   /**
    * Check if a position is within a tiled area
    */
-  isInTiledArea(x: number, z: number): boolean {
+  isInTiledArea(_x: number, _z: number): boolean {
     // TODO: Implement area detection
     // For now, return false (use procedural terrain)
     return false;

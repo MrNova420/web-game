@@ -1,10 +1,9 @@
-import * as THREE from 'three';
-
 /**
  * IntegrationManager - Coordinates all game systems
  * Central hub for system lifecycle and inter-system communication
  */
 export class IntegrationManager {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private systems: Map<string, any> = new Map();
   private eventBus: Map<string, Function[]> = new Map();
   private initOrder: string[] = [];
@@ -18,6 +17,7 @@ export class IntegrationManager {
   /**
    * Register a system with the manager
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   public registerSystem(name: string, system: any, dependencies: string[] = []): void {
     if (this.systems.has(name)) {
       console.warn(`[IntegrationManager] System ${name} already registered`);
@@ -156,7 +156,7 @@ export class IntegrationManager {
   /**
    * Emit an event to all subscribers
    */
-  public emit(eventName: string, ...args: any[]): void {
+  public emit(eventName: string, ...args: unknown[]): void {
     if (!this.eventBus.has(eventName)) return;
     
     const callbacks = this.eventBus.get(eventName)!;
@@ -175,7 +175,7 @@ export class IntegrationManager {
   public pauseAll(): void {
     console.log('[IntegrationManager] Pausing all systems...');
     
-    for (const [name, system] of this.systems) {
+    for (const [, system] of this.systems) {
       if (typeof system.pause === 'function') {
         system.pause();
       }
@@ -188,7 +188,7 @@ export class IntegrationManager {
   public resumeAll(): void {
     console.log('[IntegrationManager] Resuming all systems...');
     
-    for (const [name, system] of this.systems) {
+    for (const [, system] of this.systems) {
       if (typeof system.resume === 'function') {
         system.resume();
       }
@@ -198,15 +198,16 @@ export class IntegrationManager {
   /**
    * Get statistics about all systems
    */
-  public getStats(): any {
-    const stats: any = {
+  public getStats(): Record<string, unknown> {
+    const stats: Record<string, unknown> = {
       totalSystems: this.systems.size,
       systems: {}
     };
     
     for (const [name, system] of this.systems) {
       if (typeof system.getStats === 'function') {
-        stats.systems[name] = system.getStats();
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (stats.systems as any)[name] = system.getStats();
       }
     }
     

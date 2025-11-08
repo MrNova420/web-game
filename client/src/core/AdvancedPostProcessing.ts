@@ -109,13 +109,15 @@ export class TAAPass extends ShaderPass {
   public render(
     renderer: THREE.WebGLRenderer,
     writeBuffer: THREE.WebGLRenderTarget,
-    readBuffer: THREE.WebGLRenderTarget
+    readBuffer: THREE.WebGLRenderTarget,
+    deltaTime?: number,
+    maskActive?: boolean
   ): void {
     // Set input texture
     this.uniforms['tDiffuse'].value = readBuffer.texture;
     
     // Render TAA pass
-    super.render(renderer, writeBuffer, readBuffer);
+    super.render(renderer, writeBuffer, readBuffer, deltaTime || 0, maskActive || false);
     
     // Update history by copying current output using reusable objects
     const currentRenderTarget = renderer.getRenderTarget();
@@ -134,12 +136,6 @@ export class TAAPass extends ShaderPass {
     
     // Restore original render target
     renderer.setRenderTarget(currentRenderTarget);
-  }
-    // Clean up temporary mesh
-    quad.geometry.dispose();
-    if (quad.material instanceof THREE.Material) {
-      quad.material.dispose();
-    }
   }
   
   public setSize(width: number, height: number): void {

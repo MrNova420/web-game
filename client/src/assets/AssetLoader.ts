@@ -8,11 +8,14 @@ export class AssetLoader {
   private objLoader = new OBJLoader();
   private mtlLoader = new MTLLoader();
   private textureLoader = new THREE.TextureLoader();
-  private cache = new Map<string, any>();
+  private cache = new Map<string, THREE.Object3D | THREE.Texture>();
 
   async loadModel(path: string): Promise<THREE.Object3D> {
     if (this.cache.has(path)) {
-      return this.cache.get(path).clone();
+      const cached = this.cache.get(path);
+      if (cached && cached instanceof THREE.Object3D) {
+        return cached.clone();
+      }
     }
 
     const extension = path.split('.').pop()?.toLowerCase();
@@ -52,7 +55,7 @@ export class AssetLoader {
         const materials = await this.mtlLoader.loadAsync(mtlPath);
         materials.preload();
         this.objLoader.setMaterials(materials);
-      } catch (e) {
+      } catch {
         // MTL file doesn't exist or failed to load, continue without materials
         console.warn(`[AssetLoader] Could not load MTL for ${path}, using default material`);
       }
@@ -122,7 +125,10 @@ export class AssetLoader {
 
   async loadTexture(path: string): Promise<THREE.Texture> {
     if (this.cache.has(path)) {
-      return this.cache.get(path);
+      const cached = this.cache.get(path);
+      if (cached && cached instanceof THREE.Texture) {
+        return cached;
+      }
     }
 
     const texture = await this.textureLoader.loadAsync(path);

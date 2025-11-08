@@ -220,7 +220,7 @@ export class DebugSystem {
     commands.forEach(cmd => this.log(cmd));
   }
   
-  private spawnEntity(type: string, args: string[]): void {
+  private spawnEntity(type: string, _args: string[]): void {
     this.log(`Spawning ${type}...`, 'success');
     // Would dispatch event to spawn entity
     // window.dispatchEvent(new CustomEvent('debug:spawn', { detail: { type, args } }));

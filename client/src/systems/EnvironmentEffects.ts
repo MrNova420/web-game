@@ -13,10 +13,10 @@ export class EnvironmentEffects {
   private windAudio: HTMLAudioElement | null = null;
   
   // Shader effects
-  private composer: any = null; // EffectComposer
-  private aoPass: any = null; // SSAOPass
-  private dofPass: any = null; // DepthOfFieldPass
-  private motionBlurPass: any = null;
+  private composer: unknown = null; // EffectComposer
+  private aoPass: unknown = null; // SSAOPass
+  private dofPass: unknown = null; // DepthOfFieldPass
+  private motionBlurPass: unknown = null;
   
   // Wind system
   private windStrength: number = 0.3;
@@ -116,7 +116,8 @@ export class EnvironmentEffects {
       trackName = 'evening_ambient'; // Transition sounds
     }
     
-    // Would load from: `/extracted_assets/Fantasy_RPG_Music/${trackName}.wav`
+    // Would load from extracted_assets/Fantasy_RPG_Music/${trackName}.wav
+    console.log(`Environment track: ${trackName}`);
     // this.ambientAudio.src = path;
     // this.ambientAudio.play();
   }
@@ -192,7 +193,7 @@ export class EnvironmentEffects {
    */
   public setAmbientOcclusion(enabled: boolean): void {
     if (this.aoPass) {
-      this.aoPass.enabled = enabled;
+      (this.aoPass as { enabled: boolean }).enabled = enabled;
     }
   }
   
@@ -201,8 +202,8 @@ export class EnvironmentEffects {
    */
   public setDepthOfField(enabled: boolean, focusDistance: number = 10): void {
     if (this.dofPass) {
-      this.dofPass.enabled = enabled;
-      this.dofPass.uniforms.focus.value = focusDistance;
+      (this.dofPass as { enabled: boolean; uniforms: { focus: { value: number } } }).enabled = enabled;
+      (this.dofPass as { enabled: boolean; uniforms: { focus: { value: number } } }).uniforms.focus.value = focusDistance;
     }
   }
   
@@ -211,7 +212,8 @@ export class EnvironmentEffects {
    */
   public setMotionBlur(enabled: boolean): void {
     if (this.motionBlurPass) {
-      this.motionBlurPass.enabled = enabled;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (this.motionBlurPass as any).enabled = enabled;
     }
   }
   
@@ -223,7 +225,8 @@ export class EnvironmentEffects {
     
     // Update composer if available
     if (this.composer) {
-      this.composer.render(deltaTime);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (this.composer as any).render(deltaTime);
     }
   }
   

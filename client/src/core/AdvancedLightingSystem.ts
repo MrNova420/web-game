@@ -10,9 +10,9 @@ export class AdvancedLightingSystem {
   private timeOfDay: number = 12; // 0-24 hours
   
   // Light configuration
-  private sunLight: THREE.DirectionalLight;
-  private ambientLight: THREE.AmbientLight;
-  private hemisphereLight: THREE.HemisphereLight;
+  private sunLight!: THREE.DirectionalLight;
+  private ambientLight!: THREE.AmbientLight;
+  private hemisphereLight!: THREE.HemisphereLight;
   private fillLights: THREE.PointLight[] = [];
   
   constructor(scene: THREE.Scene) {

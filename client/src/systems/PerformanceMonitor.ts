@@ -63,7 +63,7 @@ export class PerformanceMonitor {
   /**
    * Update metrics
    */
-  update(deltaTime: number, renderer?: any, scene?: any) {
+  update(deltaTime: number, renderer?: { info?: { render?: { calls?: number; triangles?: number } } }, scene?: unknown) {
     if (!this.enabled) return;
 
     const currentTime = performance.now();
@@ -80,20 +80,22 @@ export class PerformanceMonitor {
     this.metrics.frameTime = deltaTime * 1000;
 
     // Renderer info
-    if (renderer && renderer.info) {
-      this.metrics.drawCalls = renderer.info.render.calls;
-      this.metrics.triangles = renderer.info.render.triangles;
+    if (renderer && renderer.info && renderer.info.render) {
+      this.metrics.drawCalls = renderer.info.render.calls || 0;
+      this.metrics.triangles = renderer.info.render.triangles || 0;
     }
 
     // Memory usage (if available)
-    if ((performance as any).memory) {
-      this.metrics.memory = Math.round((performance as any).memory.usedJSHeapSize / 1048576);
+    const perfWithMemory = performance as { memory?: { usedJSHeapSize?: number } };
+    if (perfWithMemory.memory) {
+      this.metrics.memory = Math.round((perfWithMemory.memory.usedJSHeapSize || 0) / 1048576);
     }
 
     // Count entities in scene
     if (scene) {
       let entityCount = 0;
-      scene.traverse(() => entityCount++);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (scene as any).traverse(() => entityCount++);
       this.metrics.entities = entityCount;
     }
 

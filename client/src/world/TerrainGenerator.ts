@@ -3,7 +3,7 @@ import { createNoise2D } from 'simplex-noise';
 import { BiomeSystem } from './BiomeSystem';
 
 export class TerrainGenerator {
-  private noise: any;
+  private noise: (x: number, y: number) => number;
   private chunkSize = 64;
   private heightScale = 20;
   private biomeSystem: BiomeSystem;
@@ -24,11 +24,11 @@ export class TerrainGenerator {
     const vertices = geometry.attributes.position.array;
     const colors: number[] = [];
 
-    // Calculate biome for chunk center
-    const centerX = chunkX * this.chunkSize + this.chunkSize / 2;
-    const centerZ = chunkZ * this.chunkSize + this.chunkSize / 2;
-    const chunkBiome = this.getBiomeAt(centerX, centerZ);
-    const biomeColor = new THREE.Color(this.biomeSystem.getBiomeColor(chunkBiome));
+    // Calculate biome for chunk center (for potential future use)
+    // const centerX = chunkX * this.chunkSize + this.chunkSize / 2;
+    // const centerZ = chunkZ * this.chunkSize + this.chunkSize / 2;
+    // const chunkBiome = this.getBiomeAt(centerX, centerZ);
+    // const biomeColor = new THREE.Color(this.biomeSystem.getBiomeColor(chunkBiome));
 
     for (let i = 0; i < vertices.length; i += 3) {
       const worldX = vertices[i] + chunkX * this.chunkSize;

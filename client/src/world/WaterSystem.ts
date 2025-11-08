@@ -52,7 +52,7 @@ export class WaterSystem {
     }
   }
 
-  update(deltaTime: number) {
+  update(_deltaTime: number) {
     // Animate water waves
     const time = this.clock.getElapsedTime();
     

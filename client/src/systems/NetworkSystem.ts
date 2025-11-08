@@ -37,7 +37,7 @@ export enum MessageType {
  */
 export interface NetworkMessage {
   type: MessageType;
-  data: any;
+  data: unknown;
   timestamp: number;
   senderId?: string;
 }
@@ -215,7 +215,7 @@ export class NetworkSystem {
   /**
    * Process incoming messages
    */
-  update(deltaTime: number) {
+  update(_deltaTime: number) {
     // Process message queue
     while (this.messageQueue.length > 0) {
       const message = this.messageQueue.shift();
@@ -241,8 +241,10 @@ export class NetworkSystem {
         if (message.senderId && message.senderId !== this.playerId) {
           const playerState = this.otherPlayers.get(message.senderId);
           if (playerState) {
-            playerState.position = message.data.position;
-            playerState.rotation = message.data.rotation;
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            playerState.position = (message.data as any).position;
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            playerState.rotation = (message.data as any).rotation;
           }
         }
         break;
@@ -252,7 +254,8 @@ export class NetworkSystem {
         break;
         
       case MessageType.CHAT_MESSAGE:
-        console.log(`[CHAT] ${message.data.username}: ${message.data.message}`);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        console.log(`[CHAT] ${(message.data as any).username}: ${(message.data as any).message}`);
         break;
         
       case MessageType.PONG:

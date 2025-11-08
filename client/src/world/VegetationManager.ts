@@ -73,7 +73,7 @@ export class VegetationManager {
             material = child.material instanceof Array ? child.material[0].clone() : child.material.clone();
             
             // RENDERING FIX: Ensure geometry has normals
-            if (!geometry.attributes.normal) {
+            if (geometry && !geometry.attributes.normal) {
               geometry.computeVertexNormals();
             }
             
@@ -114,7 +114,7 @@ export class VegetationManager {
   /**
    * PERFORMANCE FIX: Populate chunk using INSTANCED vegetation
    */
-  async populateChunk(chunkX: number, chunkZ: number, scene: THREE.Scene) {
+  async populateChunk(chunkX: number, chunkZ: number, _scene: THREE.Scene) {
     const key = `${chunkX},${chunkZ}`;
     
     // Don't populate if already done

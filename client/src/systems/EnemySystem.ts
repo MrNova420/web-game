@@ -172,7 +172,7 @@ export class EnemySystem {
    * Update all enemies (AI tick)
    */
   updateAll(deltaTime: number, playerPosition: THREE.Vector3) {
-    this.enemies.forEach((enemy, id) => {
+    this.enemies.forEach((enemy, _id) => {
       // Simple AI: move towards player
       const direction = new THREE.Vector3()
         .subVectors(playerPosition, enemy.position)

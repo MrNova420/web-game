@@ -42,7 +42,7 @@ export class MinimapSystem {
   /**
    * Update and render minimap - called by IntegrationManager with deltaTime
    */
-  update(deltaTime?: number) {
+  update(_deltaTime?: number) {
     // For now just render a simple minimap without entity data
     // Will be enhanced later when entity systems provide data
     

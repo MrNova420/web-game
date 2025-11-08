@@ -127,7 +127,7 @@ export class GameEngine {
     console.log('[GameEngine] Core initialization complete');
   }
   
-  private setupRenderer(settings: any): void {
+  private setupRenderer(settings: { targetFPS: number; textureQuality: string; shadows: boolean; antialiasing: boolean }): void {
     this.renderer.setSize(window.innerWidth, window.innerHeight);
     
     // Adjust pixel ratio based on device tier
@@ -330,10 +330,11 @@ export class GameEngine {
     // LIGHTING FIX: Create stronger lights for better visibility
     const directionalLight = new THREE.DirectionalLight(0xffffff, 1.5); // Increased intensity
     directionalLight.position.set(50, 100, 50);
-    directionalLight.castShadow = settings.shadows;
+    const perfSettings = this.perfOptimizer.getSettings();
+    directionalLight.castShadow = perfSettings.shadows;
     
     // LIGHTING FIX: Configure shadow properties for better quality
-    if (settings.shadows) {
+    if (perfSettings.shadows) {
       directionalLight.shadow.mapSize.width = 2048;
       directionalLight.shadow.mapSize.height = 2048;
       directionalLight.shadow.camera.near = 0.5;
@@ -642,10 +643,11 @@ export class GameEngine {
   /**
    * Get statistics
    */
-  public getStats(): any {
+  public getStats(): Record<string, unknown> {
     return {
       fps: Math.round(1 / this.deltaTime),
       deltaTime: this.deltaTime,
+      sceneObjects: this.scene.children.length,
       isPaused: this.isPaused,
       systemStats: this.integrationManager.getStats()
     };

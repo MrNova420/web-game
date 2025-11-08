@@ -609,7 +609,7 @@ export class UISystem {
     this.panels.set('character', panel);
   }
 
-  private createStatRow(name: string, value: number, maxIncrease: number): string {
+  private createStatRow(name: string, value: number, _maxIncrease: number): string {
     return `
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; padding: 10px; background: rgba(0,0,0,0.3); border-radius: 5px;">
         <div style="color: ${UITheme.TEXT_SECONDARY};">${name}</div>
@@ -746,7 +746,7 @@ export class UISystem {
     this.panels.set('settings', panel);
   }
 
-  private createSettingRow(label: string, type: string, options: string[] | null = null, value: any = null): string {
+  private createSettingRow(label: string, type: string, options: string[] | null = null, value: unknown = null): string {
     let control = '';
     
     if (type === 'checkbox') {
@@ -890,7 +890,7 @@ export class UISystem {
   /**
    * Update method called every frame
    */
-  update(deltaTime: number) {
+  update(_deltaTime: number) {
     // Update any animated UI elements
   }
 

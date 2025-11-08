@@ -75,14 +75,17 @@ export class InputManager {
     // Mouse events
     const target = canvas || window;
     
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     target.addEventListener('mousedown', (e: any) => {
       this.mouseButtons.set(e.button, true);
     });
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     target.addEventListener('mouseup', (e: any) => {
       this.mouseButtons.set(e.button, false);
     });
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     target.addEventListener('mousemove', (e: any) => {
       this.mousePosition.x = e.clientX;
       this.mousePosition.y = e.clientY;
@@ -94,12 +97,13 @@ export class InputManager {
       this.lastMousePosition.y = e.clientY;
     });
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     target.addEventListener('wheel', (e: any) => {
       this.wheelDelta = e.deltaY;
     });
 
     // Touch events for mobile
-    target.addEventListener('touchstart', (e: TouchEvent) => {
+    target.addEventListener('touchstart', ((e: TouchEvent) => {
       e.preventDefault();
       
       for (let i = 0; i < e.touches.length; i++) {
@@ -117,9 +121,9 @@ export class InputManager {
           this.touchCameraLast = { x: touch.clientX, y: touch.clientY };
         }
       }
-    }, { passive: false });
+    }) as EventListener, { passive: false });
 
-    target.addEventListener('touchmove', (e: TouchEvent) => {
+    target.addEventListener('touchmove', ((e: TouchEvent) => {
       e.preventDefault();
       
       for (let i = 0; i < e.touches.length; i++) {
@@ -152,9 +156,9 @@ export class InputManager {
           this.touchCameraLast = touchPos;
         }
       }
-    }, { passive: false });
+    }) as EventListener, { passive: false });
 
-    target.addEventListener('touchend', (e: TouchEvent) => {
+    target.addEventListener('touchend', ((e: TouchEvent) => {
       e.preventDefault();
       
       for (let i = 0; i < e.changedTouches.length; i++) {
@@ -169,9 +173,9 @@ export class InputManager {
         this.touchMovement = { x: 0, z: 0 };
         this.touchLook = { x: 0, y: 0 };
       }
-    }, { passive: false });
+    }) as EventListener, { passive: false });
 
-    target.addEventListener('touchcancel', (e: TouchEvent) => {
+    target.addEventListener('touchcancel', ((e: TouchEvent) => {
       // Same as touchend
       for (let i = 0; i < e.changedTouches.length; i++) {
         const touch = e.changedTouches[i];
@@ -184,7 +188,7 @@ export class InputManager {
         this.touchMovement = { x: 0, z: 0 };
         this.touchLook = { x: 0, y: 0 };
       }
-    }, { passive: false });
+    }) as EventListener, { passive: false });
 
     // Prevent context menu
     if (canvas) {

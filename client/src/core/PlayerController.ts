@@ -165,7 +165,7 @@ export class PlayerController {
       }
     }, { passive: false });
     
-    joystickContainer.addEventListener('touchend', (e) => {
+    joystickContainer.addEventListener('touchend', (_e) => {
       this.moveTouchId = null;
       this.moveForward = false;
       this.moveBackward = false;
@@ -297,7 +297,8 @@ export class PlayerController {
     const deltaX = touch.clientX - centerX;
     const deltaY = touch.clientY - centerY;
     
-    const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+    // Calculate distance for clamping
+    // const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
     const maxDistance = 35; // Max joystick displacement
     
     // Clamp to max distance
