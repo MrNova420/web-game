@@ -4186,3 +4186,2337 @@ class DebugSystem {
 - Screenshot evidence
 - Admin review tools
 
+
+---
+
+## 🎨 COMPREHENSIVE RENDERING & GRAPHICS ENGINE DEEP DIVE
+
+### SECTION A: ADVANCED ENGINE ARCHITECTURE
+
+#### A.1 WebGL/WebGPU Rendering Pipeline
+**Purpose**: Maximum performance graphics for web platform
+
+```typescript
+// File: src/engine/RenderingPipeline.ts
+// ENHANCEMENT: Multi-pass rendering pipeline
+class RenderingPipeline {
+  private renderer: THREE.WebGLRenderer;
+  private renderTargets: Map<string, THREE.WebGLRenderTarget> = new Map();
+  private passes: RenderPass[] = [];
+  
+  // ENHANCEMENT: Modern WebGL2 features
+  constructor(canvas: HTMLCanvasElement) {
+    const context = canvas.getContext('webgl2', {
+      alpha: false,
+      antialias: false, // Use SMAA instead
+      depth: true,
+      stencil: true,
+      powerPreference: 'high-performance',
+      preserveDrawingBuffer: false
+    });
+    
+    this.renderer = new THREE.WebGLRenderer({
+      canvas,
+      context,
+      precision: 'highp',
+      logarithmicDepthBuffer: true // Better depth precision
+    });
+    
+    // Enable all WebGL2 extensions
+    this.enableExtensions();
+    
+    // Configure for maximum quality
+    this.configureRenderer();
+    
+    // Setup render passes
+    this.setupRenderPasses();
+  }
+  
+  private enableExtensions() {
+    const gl = this.renderer.getContext();
+    
+    // ENHANCEMENT: Enable key WebGL2 extensions
+    const extensions = [
+      'EXT_color_buffer_float',
+      'EXT_float_blend',
+      'OES_texture_float_linear',
+      'WEBGL_compressed_texture_s3tc',
+      'WEBGL_compressed_texture_astc',
+      'WEBGL_compressed_texture_etc',
+      'EXT_texture_compression_bptc',
+      'WEBGL_multi_draw'
+    ];
+    
+    extensions.forEach(ext => {
+      const extension = gl.getExtension(ext);
+      if (extension) {
+        console.log(`✓ Enabled: ${ext}`);
+      } else {
+        console.warn(`✗ Not available: ${ext}`);
+      }
+    });
+  }
+  
+  private configureRenderer() {
+    // ENHANCEMENT: High-quality rendering settings
+    this.renderer.shadowMap.enabled = true;
+    this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    this.renderer.shadowMap.autoUpdate = false; // Manual updates for performance
+    
+    this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    this.renderer.toneMappingExposure = 1.0;
+    
+    this.renderer.outputEncoding = THREE.sRGBEncoding;
+    
+    // Physically accurate lights
+    this.renderer.physicallyCorrectLights = true;
+    
+    // Enable hardware instancing
+    this.renderer.capabilities.isWebGL2 = true;
+  }
+  
+  private setupRenderPasses() {
+    // ENHANCEMENT: Multi-pass rendering architecture
+    
+    // Pass 1: Shadow maps
+    this.passes.push(new ShadowMapPass(this.renderer));
+    
+    // Pass 2: G-Buffer (deferred rendering)
+    this.passes.push(new GBufferPass(this.renderer));
+    
+    // Pass 3: Lighting pass
+    this.passes.push(new LightingPass(this.renderer));
+    
+    // Pass 4: Transparent objects
+    this.passes.push(new TransparencyPass(this.renderer));
+    
+    // Pass 5: Post-processing
+    this.passes.push(new PostProcessPass(this.renderer));
+    
+    // Pass 6: UI overlay
+    this.passes.push(new UIPass(this.renderer));
+  }
+  
+  render(scene: THREE.Scene, camera: THREE.Camera) {
+    // Execute all render passes in order
+    for (const pass of this.passes) {
+      pass.render(scene, camera);
+    }
+  }
+}
+```
+
+#### A.2 Deferred Rendering System
+**Purpose**: Handle many lights efficiently
+
+```typescript
+// File: src/engine/DeferredRenderer.ts
+// ENHANCEMENT: Deferred shading for complex lighting
+class DeferredRenderer {
+  private gBuffer: GBuffer;
+  private lightingShader: THREE.ShaderMaterial;
+  private fullscreenQuad: THREE.Mesh;
+  
+  // ENHANCEMENT: Multiple render targets for G-Buffer
+  private setupGBuffer() {
+    this.gBuffer = {
+      // RT0: Position (RGB) + Depth (A)
+      position: new THREE.WebGLRenderTarget(width, height, {
+        type: THREE.FloatType,
+        format: THREE.RGBAFormat,
+        minFilter: THREE.NearestFilter,
+        magFilter: THREE.NearestFilter
+      }),
+      
+      // RT1: Normal (RGB) + Roughness (A)
+      normal: new THREE.WebGLRenderTarget(width, height, {
+        type: THREE.HalfFloatType,
+        format: THREE.RGBAFormat,
+        minFilter: THREE.NearestFilter,
+        magFilter: THREE.NearestFilter
+      }),
+      
+      // RT2: Albedo (RGB) + Metalness (A)
+      albedo: new THREE.WebGLRenderTarget(width, height, {
+        type: THREE.UnsignedByteType,
+        format: THREE.RGBAFormat,
+        encoding: THREE.sRGBEncoding
+      }),
+      
+      // RT3: Emission (RGB) + AO (A)
+      emission: new THREE.WebGLRenderTarget(width, height, {
+        type: THREE.HalfFloatType,
+        format: THREE.RGBAFormat
+      })
+    };
+  }
+  
+  // ENHANCEMENT: Lighting pass shader
+  private createLightingShader() {
+    return new THREE.ShaderMaterial({
+      uniforms: {
+        tPosition: { value: this.gBuffer.position.texture },
+        tNormal: { value: this.gBuffer.normal.texture },
+        tAlbedo: { value: this.gBuffer.albedo.texture },
+        tEmission: { value: this.gBuffer.emission.texture },
+        
+        // Lighting uniforms
+        directionalLights: { value: [] },
+        pointLights: { value: [] },
+        spotLights: { value: [] },
+        
+        // Environment
+        envMap: { value: null },
+        envMapIntensity: { value: 1.0 }
+      },
+      
+      vertexShader: `
+        varying vec2 vUv;
+        void main() {
+          vUv = uv;
+          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        }
+      `,
+      
+      fragmentShader: `
+        uniform sampler2D tPosition;
+        uniform sampler2D tNormal;
+        uniform sampler2D tAlbedo;
+        uniform sampler2D tEmission;
+        
+        // PBR lighting calculations
+        vec3 calculatePBR(vec3 position, vec3 normal, vec3 albedo, 
+                          float roughness, float metalness, vec3 viewDir) {
+          vec3 finalColor = vec3(0.0);
+          
+          // Calculate lighting for each light source
+          // ... PBR BRDF calculations ...
+          
+          return finalColor;
+        }
+        
+        void main() {
+          vec2 uv = gl_FragCoord.xy / resolution;
+          
+          vec4 positionData = texture2D(tPosition, uv);
+          vec4 normalData = texture2D(tNormal, uv);
+          vec4 albedoData = texture2D(tAlbedo, uv);
+          vec4 emissionData = texture2D(tEmission, uv);
+          
+          vec3 position = positionData.xyz;
+          vec3 normal = normalData.xyz;
+          vec3 albedo = albedoData.rgb;
+          float metalness = albedoData.a;
+          float roughness = normalData.a;
+          vec3 emission = emissionData.rgb;
+          float ao = emissionData.a;
+          
+          vec3 viewDir = normalize(cameraPosition - position);
+          
+          // Calculate PBR lighting
+          vec3 litColor = calculatePBR(position, normal, albedo, 
+                                       roughness, metalness, viewDir);
+          
+          // Add emission
+          litColor += emission;
+          
+          // Apply ambient occlusion
+          litColor *= ao;
+          
+          gl_FragColor = vec4(litColor, 1.0);
+        }
+      `
+    });
+  }
+}
+```
+
+#### A.3 Forward+ Rendering
+**Purpose**: Alternative to deferred for better transparency
+
+```typescript
+// File: src/engine/ForwardPlusRenderer.ts
+// ENHANCEMENT: Forward+ (tiled forward rendering)
+class ForwardPlusRenderer {
+  private lightGrid: Uint32Array;
+  private lightIndices: Uint32Array;
+  private tileSize = 16; // 16x16 pixel tiles
+  
+  // ENHANCEMENT: Compute light grid in compute shader
+  private buildLightGrid(lights: Light[], camera: THREE.Camera) {
+    const tilesX = Math.ceil(width / this.tileSize);
+    const tilesY = Math.ceil(height / this.tileSize);
+    
+    // For each tile, determine which lights affect it
+    for (let y = 0; y < tilesY; y++) {
+      for (let x = 0; x < tilesX; x++) {
+        const tileIndex = y * tilesX + x;
+        
+        // Calculate tile frustum
+        const tileFrustum = this.calculateTileFrustum(x, y, camera);
+        
+        // Test each light against tile frustum
+        const affectingLights = lights.filter(light => 
+          this.lightIntersectsFrustum(light, tileFrustum)
+        );
+        
+        // Store light indices for this tile
+        this.lightGrid[tileIndex] = this.lightIndices.length;
+        this.lightGrid[tileIndex + 1] = affectingLights.length;
+        
+        for (const light of affectingLights) {
+          this.lightIndices.push(light.index);
+        }
+      }
+    }
+  }
+  
+  // ENHANCEMENT: Shader accesses only relevant lights
+  private createForwardPlusShader() {
+    return `
+      uniform usampler2D lightGrid;
+      uniform sampler2D lightIndices;
+      
+      void main() {
+        // Determine which tile this fragment is in
+        ivec2 tileCoord = ivec2(gl_FragCoord.xy) / ${this.tileSize};
+        int tileIndex = tileCoord.y * tilesX + tileCoord.x;
+        
+        // Get light list for this tile
+        uvec2 gridData = texelFetch(lightGrid, tileIndex, 0).rg;
+        uint lightStart = gridData.r;
+        uint lightCount = gridData.g;
+        
+        // Calculate lighting using only relevant lights
+        vec3 lighting = vec3(0.0);
+        for (uint i = 0; i < lightCount; i++) {
+          uint lightIndex = texelFetch(lightIndices, int(lightStart + i), 0).r;
+          Light light = lights[lightIndex];
+          lighting += calculateLightContribution(light, ...);
+        }
+        
+        gl_FragColor = vec4(lighting, 1.0);
+      }
+    `;
+  }
+}
+```
+
+---
+
+### SECTION B: ADVANCED MATERIAL SYSTEM
+
+#### B.1 Physically Based Rendering (PBR)
+**Purpose**: Realistic material appearance
+
+```typescript
+// File: src/materials/PBRMaterialSystem.ts
+// ENHANCEMENT: Complete PBR material pipeline
+class PBRMaterialSystem {
+  private materialCache = new Map<string, PBRMaterial>();
+  
+  // ENHANCEMENT: Material parameter sets for all asset types
+  private materialPresets = {
+    // Metals
+    gold: {
+      baseColor: new THREE.Color(1.0, 0.766, 0.336),
+      metalness: 1.0,
+      roughness: 0.2,
+      reflectivity: 0.5
+    },
+    silver: {
+      baseColor: new THREE.Color(0.972, 0.960, 0.915),
+      metalness: 1.0,
+      roughness: 0.15,
+      reflectivity: 0.6
+    },
+    iron: {
+      baseColor: new THREE.Color(0.560, 0.570, 0.580),
+      metalness: 1.0,
+      roughness: 0.5,
+      reflectivity: 0.4
+    },
+    copper: {
+      baseColor: new THREE.Color(0.955, 0.637, 0.538),
+      metalness: 1.0,
+      roughness: 0.3,
+      reflectivity: 0.45
+    },
+    
+    // Wood types
+    woodOak: {
+      baseColor: new THREE.Color(0.545, 0.353, 0.169),
+      metalness: 0.0,
+      roughness: 0.85,
+      normalScale: 1.2
+    },
+    woodPine: {
+      baseColor: new THREE.Color(0.804, 0.710, 0.549),
+      metalness: 0.0,
+      roughness: 0.8,
+      normalScale: 1.0
+    },
+    
+    // Stone types
+    stoneGranite: {
+      baseColor: new THREE.Color(0.6, 0.6, 0.6),
+      metalness: 0.0,
+      roughness: 0.95,
+      normalScale: 1.5
+    },
+    stoneMarble: {
+      baseColor: new THREE.Color(0.95, 0.95, 0.95),
+      metalness: 0.0,
+      roughness: 0.3,
+      normalScale: 0.5
+    },
+    
+    // Fabric
+    clothWool: {
+      baseColor: new THREE.Color(0.8, 0.8, 0.75),
+      metalness: 0.0,
+      roughness: 0.9,
+      subsurfaceScattering: 0.3
+    },
+    clothSilk: {
+      baseColor: new THREE.Color(0.9, 0.9, 0.95),
+      metalness: 0.0,
+      roughness: 0.2,
+      sheen: 0.5
+    },
+    
+    // Vegetation
+    grassGreen: {
+      baseColor: new THREE.Color(0.235, 0.612, 0.141),
+      metalness: 0.0,
+      roughness: 0.9,
+      subsurfaceScattering: 0.5,
+      translucency: 0.3
+    },
+    leavesGreen: {
+      baseColor: new THREE.Color(0.2, 0.5, 0.2),
+      metalness: 0.0,
+      roughness: 0.85,
+      subsurfaceScattering: 0.6,
+      translucency: 0.4
+    },
+    
+    // Magic/Fantasy
+    crystalBlue: {
+      baseColor: new THREE.Color(0.4, 0.7, 1.0),
+      metalness: 0.0,
+      roughness: 0.05,
+      transmission: 0.9,
+      ior: 1.5,
+      thickness: 1.0,
+      emission: new THREE.Color(0.2, 0.4, 0.6),
+      emissionIntensity: 2.0
+    },
+    gemRuby: {
+      baseColor: new THREE.Color(0.8, 0.1, 0.1),
+      metalness: 0.0,
+      roughness: 0.1,
+      transmission: 0.8,
+      ior: 1.76,
+      thickness: 0.5
+    }
+  };
+  
+  // ENHANCEMENT: Create advanced PBR material
+  createPBRMaterial(assetType: string, customParams?: Partial<PBRParams>): THREE.Material {
+    const preset = this.materialPresets[assetType] || this.materialPresets.stoneGranite;
+    const params = { ...preset, ...customParams };
+    
+    const material = new THREE.MeshPhysicalMaterial({
+      // Base properties
+      color: params.baseColor,
+      metalness: params.metalness,
+      roughness: params.roughness,
+      
+      // Advanced properties
+      reflectivity: params.reflectivity || 0.5,
+      clearcoat: params.clearcoat || 0.0,
+      clearcoatRoughness: params.clearcoatRoughness || 0.0,
+      sheen: params.sheen || 0.0,
+      sheenColor: params.sheenColor || new THREE.Color(1, 1, 1),
+      
+      // Transmission (glass, water)
+      transmission: params.transmission || 0.0,
+      thickness: params.thickness || 0.0,
+      ior: params.ior || 1.5,
+      
+      // Emission
+      emissive: params.emission || new THREE.Color(0, 0, 0),
+      emissiveIntensity: params.emissionIntensity || 0.0,
+      
+      // Environment
+      envMapIntensity: 1.0,
+      
+      // Rendering
+      side: THREE.FrontSide,
+      flatShading: false,
+      wireframe: false
+    });
+    
+    return material;
+  }
+  
+  // ENHANCEMENT: Load texture set for PBR
+  async loadPBRTextures(assetPath: string): Promise<PBRTextures> {
+    const loader = new THREE.TextureLoader();
+    
+    // Load all PBR texture maps in parallel
+    const [
+      baseColor,
+      normal,
+      roughness,
+      metalness,
+      ao,
+      height,
+      emission
+    ] = await Promise.all([
+      this.loadTexture(`${assetPath}_basecolor.png`),
+      this.loadTexture(`${assetPath}_normal.png`),
+      this.loadTexture(`${assetPath}_roughness.png`),
+      this.loadTexture(`${assetPath}_metalness.png`),
+      this.loadTexture(`${assetPath}_ao.png`),
+      this.loadTexture(`${assetPath}_height.png`),
+      this.loadTexture(`${assetPath}_emission.png`)
+    ]);
+    
+    // Configure textures
+    [baseColor, emission].forEach(tex => {
+      if (tex) tex.encoding = THREE.sRGBEncoding;
+    });
+    
+    [normal, roughness, metalness, ao, height].forEach(tex => {
+      if (tex) tex.encoding = THREE.LinearEncoding;
+    });
+    
+    return { baseColor, normal, roughness, metalness, ao, height, emission };
+  }
+  
+  // ENHANCEMENT: Apply textures to material
+  applyTextures(material: THREE.MeshPhysicalMaterial, textures: PBRTextures) {
+    if (textures.baseColor) {
+      material.map = textures.baseColor;
+    }
+    
+    if (textures.normal) {
+      material.normalMap = textures.normal;
+      material.normalScale = new THREE.Vector2(1, 1);
+    }
+    
+    if (textures.roughness) {
+      material.roughnessMap = textures.roughness;
+    }
+    
+    if (textures.metalness) {
+      material.metalnessMap = textures.metalness;
+    }
+    
+    if (textures.ao) {
+      material.aoMap = textures.ao;
+      material.aoMapIntensity = 1.0;
+    }
+    
+    if (textures.height) {
+      material.displacementMap = textures.height;
+      material.displacementScale = 0.1;
+    }
+    
+    if (textures.emission) {
+      material.emissiveMap = textures.emission;
+    }
+    
+    material.needsUpdate = true;
+  }
+}
+```
+
+#### B.2 Shader Graph System
+**Purpose**: Visual shader editing
+
+```typescript
+// File: src/materials/ShaderGraphSystem.ts
+// ENHANCEMENT: Node-based shader creation
+class ShaderGraphSystem {
+  private nodes = new Map<string, ShaderNode>();
+  private connections: ShaderConnection[] = [];
+  
+  // ENHANCEMENT: Built-in shader nodes
+  private nodeTypes = {
+    // Input nodes
+    position: () => 'vec3 worldPosition = (modelMatrix * vec4(position, 1.0)).xyz;',
+    normal: () => 'vec3 worldNormal = normalize((modelMatrix * vec4(normal, 0.0)).xyz);',
+    uv: () => 'vec2 texCoord = uv;',
+    vertexColor: () => 'vec4 vColor = color;',
+    
+    // Texture nodes
+    texture2D: (texName: string) => `vec4 ${texName}Sample = texture2D(${texName}, texCoord);`,
+    triplanarMapping: (texName: string) => `
+      vec4 triplanarSample(sampler2D tex, vec3 pos, vec3 normal) {
+        vec3 blendWeights = abs(normal);
+        blendWeights = pow(blendWeights, vec3(8.0));
+        blendWeights /= (blendWeights.x + blendWeights.y + blendWeights.z);
+        
+        vec4 xSample = texture2D(tex, pos.yz);
+        vec4 ySample = texture2D(tex, pos.xz);
+        vec4 zSample = texture2D(tex, pos.xy);
+        
+        return xSample * blendWeights.x + 
+               ySample * blendWeights.y + 
+               zSample * blendWeights.z;
+      }
+    `,
+    
+    // Math nodes
+    multiply: (a: string, b: string) => `(${a} * ${b})`,
+    add: (a: string, b: string) => `(${a} + ${b})`,
+    lerp: (a: string, b: string, t: string) => `mix(${a}, ${b}, ${t})`,
+    clamp: (x: string, min: string, max: string) => `clamp(${x}, ${min}, ${max})`,
+    
+    // Color nodes
+    desaturate: (color: string, amount: string) => `
+      float luminance = dot(${color}.rgb, vec3(0.299, 0.587, 0.114));
+      ${color}.rgb = mix(${color}.rgb, vec3(luminance), ${amount});
+    `,
+    colorGrade: (color: string, contrast: string, brightness: string) => `
+      ${color}.rgb = ((${color}.rgb - 0.5) * ${contrast} + 0.5) + ${brightness};
+    `,
+    
+    // Utility nodes
+    fresnel: () => `
+      float fresnel(vec3 viewDir, vec3 normal, float power) {
+        return pow(1.0 - max(0.0, dot(viewDir, normal)), power);
+      }
+    `,
+    parallaxOcclusion: () => `
+      vec2 parallaxOcclusionMapping(vec2 texCoords, vec3 viewDir, sampler2D heightMap) {
+        const float minLayers = 8.0;
+        const float maxLayers = 32.0;
+        float numLayers = mix(maxLayers, minLayers, abs(dot(vec3(0, 0, 1), viewDir)));
+        
+        float layerDepth = 1.0 / numLayers;
+        float currentLayerDepth = 0.0;
+        vec2 P = viewDir.xy * 0.1;
+        vec2 deltaTexCoords = P / numLayers;
+        
+        vec2 currentTexCoords = texCoords;
+        float currentDepthMapValue = texture2D(heightMap, currentTexCoords).r;
+        
+        while(currentLayerDepth < currentDepthMapValue) {
+          currentTexCoords -= deltaTexCoords;
+          currentDepthMapValue = texture2D(heightMap, currentTexCoords).r;
+          currentLayerDepth += layerDepth;
+        }
+        
+        return currentTexCoords;
+      }
+    `
+  };
+  
+  // ENHANCEMENT: Compile shader graph to GLSL
+  compile(): { vertexShader: string, fragmentShader: string } {
+    const vertexCode: string[] = [];
+    const fragmentCode: string[] = [];
+    
+    // Topological sort of nodes
+    const sortedNodes = this.topologicalSort();
+    
+    // Generate code for each node
+    for (const node of sortedNodes) {
+      const code = this.generateNodeCode(node);
+      if (node.stage === 'vertex') {
+        vertexCode.push(code);
+      } else {
+        fragmentCode.push(code);
+      }
+    }
+    
+    return {
+      vertexShader: this.wrapVertexShader(vertexCode),
+      fragmentShader: this.wrapFragmentShader(fragmentCode)
+    };
+  }
+}
+```
+
+---
+
+### SECTION C: ADVANCED LIGHTING SYSTEMS
+
+#### C.1 Global Illumination (GI)
+**Purpose**: Realistic indirect lighting
+
+```typescript
+// File: src/lighting/GlobalIllumination.ts
+// ENHANCEMENT: Real-time GI approximation
+class GlobalIlluminationSystem {
+  private lightProbes: LightProbe[] = [];
+  private irradianceVolume: IrradianceVolume;
+  private reflectionProbes: ReflectionProbe[] = [];
+  
+  // ENHANCEMENT: Voxel-based GI
+  private voxelGrid: VoxelGrid;
+  private voxelSize = 1.0;
+  private gridResolution = 128;
+  
+  constructor() {
+    this.setupVoxelGrid();
+    this.setupLightProbes();
+  }
+  
+  private setupVoxelGrid() {
+    // ENHANCEMENT: 3D texture for voxel radiance
+    this.voxelGrid = {
+      radiance: new THREE.Data3DTexture(
+        new Float32Array(this.gridResolution ** 3 * 4),
+        this.gridResolution,
+        this.gridResolution,
+        this.gridResolution
+      ),
+      
+      normal: new THREE.Data3DTexture(
+        new Float32Array(this.gridResolution ** 3 * 4),
+        this.gridResolution,
+        this.gridResolution,
+        this.gridResolution
+      )
+    };
+    
+    this.voxelGrid.radiance.format = THREE.RGBAFormat;
+    this.voxelGrid.radiance.type = THREE.FloatType;
+    this.voxelGrid.radiance.minFilter = THREE.LinearFilter;
+    this.voxelGrid.radiance.magFilter = THREE.LinearFilter;
+  }
+  
+  // ENHANCEMENT: Voxelize scene
+  voxelizeScene(scene: THREE.Scene) {
+    // Render scene from 6 directions into voxel grid
+    const voxelCamera = new THREE.OrthographicCamera(
+      -this.gridResolution * this.voxelSize / 2,
+      this.gridResolution * this.voxelSize / 2,
+      this.gridResolution * this.voxelSize / 2,
+      -this.gridResolution * this.voxelSize / 2,
+      0,
+      this.gridResolution * this.voxelSize
+    );
+    
+    const directions = [
+      { pos: [0, 0, 1], up: [0, 1, 0] },   // +Z
+      { pos: [0, 0, -1], up: [0, 1, 0] },  // -Z
+      { pos: [1, 0, 0], up: [0, 1, 0] },   // +X
+      { pos: [-1, 0, 0], up: [0, 1, 0] },  // -X
+      { pos: [0, 1, 0], up: [0, 0, 1] },   // +Y
+      { pos: [0, -1, 0], up: [0, 0, -1] }  // -Y
+    ];
+    
+    for (const dir of directions) {
+      voxelCamera.position.set(...dir.pos);
+      voxelCamera.up.set(...dir.up);
+      voxelCamera.lookAt(0, 0, 0);
+      
+      // Render and inject into voxel grid
+      this.voxelizeFromDirection(scene, voxelCamera);
+    }
+  }
+  
+  // ENHANCEMENT: Cone tracing for GI
+  createConeTracingShader() {
+    return `
+      uniform sampler3D voxelRadiance;
+      uniform float voxelSize;
+      uniform int gridResolution;
+      
+      vec4 coneTrace(vec3 origin, vec3 direction, float aperture) {
+        vec4 accum = vec4(0.0);
+        float dist = voxelSize;
+        
+        // March through voxel grid
+        while (dist < 100.0 && accum.a < 0.95) {
+          vec3 samplePos = origin + direction * dist;
+          
+          // Convert to voxel coordinates
+          vec3 voxelCoord = (samplePos / voxelSize + float(gridResolution) / 2.0) / 
+                            float(gridResolution);
+          
+          // Check bounds
+          if (any(lessThan(voxelCoord, vec3(0.0))) || 
+              any(greaterThan(voxelCoord, vec3(1.0)))) {
+            break;
+          }
+          
+          // Sample voxel radiance
+          float diameter = 2.0 * aperture * dist;
+          float mipLevel = log2(diameter / voxelSize);
+          vec4 sample = textureLod(voxelRadiance, voxelCoord, mipLevel);
+          
+          // Accumulate
+          float alpha = 1.0 - accum.a;
+          accum.rgb += sample.rgb * sample.a * alpha;
+          accum.a += sample.a * alpha;
+          
+          // Step forward
+          dist += diameter;
+        }
+        
+        return accum;
+      }
+      
+      vec3 calculateIndirectLighting(vec3 position, vec3 normal) {
+        // Diffuse cone tracing
+        vec3 indirectDiffuse = vec3(0.0);
+        
+        // Sample multiple cones around hemisphere
+        const int NUM_CONES = 6;
+        const float APERTURE = 0.577; // tan(30 degrees)
+        
+        vec3 tangent = normalize(cross(normal, vec3(0.0, 1.0, 0.0)));
+        vec3 bitangent = cross(normal, tangent);
+        
+        for (int i = 0; i < NUM_CONES; i++) {
+          float angle = float(i) / float(NUM_CONES) * 2.0 * PI;
+          vec3 coneDir = normal * 0.5 + 
+                        (tangent * cos(angle) + bitangent * sin(angle)) * 0.5;
+          coneDir = normalize(coneDir);
+          
+          vec4 coneSample = coneTrace(position, coneDir, APERTURE);
+          indirectDiffuse += coneSample.rgb;
+        }
+        
+        indirectDiffuse /= float(NUM_CONES);
+        
+        return indirectDiffuse;
+      }
+    `;
+  }
+}
+```
+
+#### C.2 Volumetric Lighting & Fog
+**Purpose**: God rays and atmospheric effects
+
+```typescript
+// File: src/lighting/VolumetricLighting.ts
+// ENHANCEMENT: Volumetric light scattering
+class VolumetricLightingSystem {
+  private volumetricBuffer: THREE.WebGLRenderTarget;
+  private raymarchShader: THREE.ShaderMaterial;
+  
+  constructor(width: number, height: number) {
+    // Lower resolution for performance
+    this.volumetricBuffer = new THREE.WebGLRenderTarget(
+      width / 2,
+      height / 2,
+      {
+        type: THREE.HalfFloatType,
+        format: THREE.RGBAFormat
+      }
+    );
+    
+    this.createRaymarchShader();
+  }
+  
+  private createRaymarchShader() {
+    this.raymarchShader = new THREE.ShaderMaterial({
+      uniforms: {
+        tDepth: { value: null },
+        lightPosition: { value: new THREE.Vector3() },
+        lightColor: { value: new THREE.Color(1, 1, 1) },
+        lightIntensity: { value: 1.0 },
+        fogDensity: { value: 0.02 },
+        numSamples: { value: 64 },
+        scattering: { value: 0.5 },
+        cameraPosition: { value: new THREE.Vector3() },
+        invProjectionMatrix: { value: new THREE.Matrix4() },
+        invViewMatrix: { value: new THREE.Matrix4() }
+      },
+      
+      vertexShader: `
+        varying vec2 vUv;
+        void main() {
+          vUv = uv;
+          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        }
+      `,
+      
+      fragmentShader: `
+        uniform sampler2D tDepth;
+        uniform vec3 lightPosition;
+        uniform vec3 lightColor;
+        uniform float lightIntensity;
+        uniform float fogDensity;
+        uniform int numSamples;
+        uniform float scattering;
+        uniform vec3 cameraPosition;
+        uniform mat4 invProjectionMatrix;
+        uniform mat4 invViewMatrix;
+        
+        varying vec2 vUv;
+        
+        vec3 getWorldPosition(vec2 uv, float depth) {
+          vec4 clipSpace = vec4(uv * 2.0 - 1.0, depth * 2.0 - 1.0, 1.0);
+          vec4 viewSpace = invProjectionMatrix * clipSpace;
+          viewSpace /= viewSpace.w;
+          vec4 worldSpace = invViewMatrix * viewSpace;
+          return worldSpace.xyz;
+        }
+        
+        float miePhaseFunction(float cosAngle, float g) {
+          float g2 = g * g;
+          float phase = (1.0 - g2) / (4.0 * PI * pow(1.0 + g2 - 2.0 * g * cosAngle, 1.5));
+          return phase;
+        }
+        
+        void main() {
+          float depth = texture2D(tDepth, vUv).r;
+          vec3 worldPos = getWorldPosition(vUv, depth);
+          
+          // Raymarch from camera to world position
+          vec3 rayStart = cameraPosition;
+          vec3 rayEnd = worldPos;
+          vec3 rayDir = rayEnd - rayStart;
+          float rayLength = length(rayDir);
+          rayDir = normalize(rayDir);
+          
+          float stepSize = rayLength / float(numSamples);
+          vec3 step = rayDir * stepSize;
+          
+          vec3 accumulatedLight = vec3(0.0);
+          vec3 currentPos = rayStart;
+          
+          for (int i = 0; i < numSamples; i++) {
+            currentPos += step;
+            
+            // Distance to light
+            vec3 toLight = lightPosition - currentPos;
+            float distToLight = length(toLight);
+            vec3 lightDir = toLight / distToLight;
+            
+            // Attenuation
+            float attenuation = 1.0 / (1.0 + distToLight * distToLight);
+            
+            // Phase function for scattering
+            float cosAngle = dot(rayDir, lightDir);
+            float phase = miePhaseFunction(cosAngle, scattering);
+            
+            // Fog density
+            float density = fogDensity * exp(-currentPos.y * 0.1);
+            
+            // Accumulate light
+            vec3 scatteredLight = lightColor * lightIntensity * 
+                                 attenuation * phase * density;
+            
+            accumulatedLight += scatteredLight * stepSize;
+          }
+          
+          gl_FragColor = vec4(accumulatedLight, 1.0);
+        }
+      `
+    });
+  }
+}
+```
+
+#### C.3 Dynamic Shadow System
+**Purpose**: High-quality real-time shadows
+
+```typescript
+// File: src/lighting/ShadowSystem.ts
+// ENHANCEMENT: Cascaded shadow maps
+class CascadedShadowMapSystem {
+  private cascades: ShadowCascade[] = [];
+  private numCascades = 4;
+  private shadowMapSize = 2048;
+  
+  constructor(light: THREE.DirectionalLight, camera: THREE.Camera) {
+    this.setupCascades(light, camera);
+  }
+  
+  private setupCascades(light: THREE.DirectionalLight, camera: THREE.Camera) {
+    // ENHANCEMENT: Split view frustum into cascades
+    const cascadeSplits = this.calculateCascadeSplits(camera);
+    
+    for (let i = 0; i < this.numCascades; i++) {
+      const cascade: ShadowCascade = {
+        shadowMap: new THREE.WebGLRenderTarget(
+          this.shadowMapSize,
+          this.shadowMapSize,
+          {
+            type: THREE.FloatType,
+            format: THREE.RGBAFormat,
+            minFilter: THREE.LinearFilter,
+            magFilter: THREE.LinearFilter
+          }
+        ),
+        
+        camera: new THREE.OrthographicCamera(),
+        
+        nearPlane: cascadeSplits[i],
+        farPlane: cascadeSplits[i + 1],
+        
+        viewMatrix: new THREE.Matrix4(),
+        projectionMatrix: new THREE.Matrix4()
+      };
+      
+      this.cascades.push(cascade);
+    }
+  }
+  
+  private calculateCascadeSplits(camera: THREE.Camera): number[] {
+    // ENHANCEMENT: Logarithmic split scheme
+    const splits: number[] = [camera.near];
+    const lambda = 0.5; // Blend between uniform and logarithmic
+    
+    for (let i = 1; i < this.numCascades; i++) {
+      const t = i / this.numCascades;
+      
+      // Uniform split
+      const uniform = camera.near + (camera.far - camera.near) * t;
+      
+      // Logarithmic split
+      const logarithmic = camera.near * Math.pow(camera.far / camera.near, t);
+      
+      // Blend
+      const split = lambda * logarithmic + (1 - lambda) * uniform;
+      
+      splits.push(split);
+    }
+    
+    splits.push(camera.far);
+    
+    return splits;
+  }
+  
+  // ENHANCEMENT: Update cascade matrices
+  updateCascades(light: THREE.DirectionalLight, camera: THREE.Camera) {
+    for (let i = 0; i < this.numCascades; i++) {
+      const cascade = this.cascades[i];
+      
+      // Calculate frustum corners for this cascade
+      const frustumCorners = this.calculateFrustumCorners(
+        camera,
+        cascade.nearPlane,
+        cascade.farPlane
+      );
+      
+      // Calculate tight bounding box
+      const center = frustumCorners.reduce((sum, corner) => 
+        sum.add(corner), new THREE.Vector3()
+      ).divideScalar(frustumCorners.length);
+      
+      // Position cascade camera
+      cascade.camera.position.copy(center).sub(
+        light.position.clone().normalize().multiplyScalar(100)
+      );
+      cascade.camera.lookAt(center);
+      
+      // Calculate bounds
+      const bounds = this.calculateBounds(frustumCorners, cascade.camera);
+      
+      cascade.camera.left = bounds.min.x;
+      cascade.camera.right = bounds.max.x;
+      cascade.camera.bottom = bounds.min.y;
+      cascade.camera.top = bounds.max.y;
+      cascade.camera.near = 0;
+      cascade.camera.far = bounds.max.z - bounds.min.z + 100;
+      
+      cascade.camera.updateProjectionMatrix();
+      cascade.camera.updateMatrixWorld(true);
+    }
+  }
+  
+  // ENHANCEMENT: PCF shadow sampling
+  createShadowShader() {
+    return `
+      uniform sampler2D shadowMaps[4];
+      uniform mat4 shadowMatrices[4];
+      uniform float cascadeSplits[5];
+      uniform vec2 shadowMapSize;
+      
+      float sampleShadowMapPCF(sampler2D shadowMap, vec4 shadowCoord, vec2 offset) {
+        vec2 uv = shadowCoord.xy + offset / shadowMapSize;
+        float depth = texture2D(shadowMap, uv).r;
+        return step(shadowCoord.z, depth);
+      }
+      
+      float calculateShadow(vec3 worldPos, float viewDepth) {
+        // Select cascade
+        int cascadeIndex = 0;
+        for (int i = 0; i < 4; i++) {
+          if (viewDepth < cascadeSplits[i + 1]) {
+            cascadeIndex = i;
+            break;
+          }
+        }
+        
+        // Transform to shadow space
+        vec4 shadowCoord = shadowMatrices[cascadeIndex] * vec4(worldPos, 1.0);
+        shadowCoord.xyz /= shadowCoord.w;
+        shadowCoord.xyz = shadowCoord.xyz * 0.5 + 0.5;
+        
+        // PCF filtering
+        float shadow = 0.0;
+        const int pcfSize = 3;
+        const float pcfOffset = float(pcfSize) / 2.0;
+        
+        for (int x = 0; x < pcfSize; x++) {
+          for (int y = 0; y < pcfSize; y++) {
+            vec2 offset = vec2(float(x) - pcfOffset, float(y) - pcfOffset);
+            shadow += sampleShadowMapPCF(shadowMaps[cascadeIndex], shadowCoord, offset);
+          }
+        }
+        
+        shadow /= float(pcfSize * pcfSize);
+        
+        return shadow;
+      }
+    `;
+  }
+}
+```
+
+---
+
+### SECTION D: VISUAL EFFECTS & POST-PROCESSING
+
+#### D.1 Screen Space Reflections (SSR)
+**Purpose**: Realistic reflections without RT
+
+```typescript
+// File: src/effects/ScreenSpaceReflections.ts
+// ENHANCEMENT: SSR for water and shiny surfaces
+class ScreenSpaceReflectionsPass {
+  private ssrShader: THREE.ShaderMaterial;
+  
+  constructor() {
+    this.createSSRShader();
+  }
+  
+  private createSSRShader() {
+    this.ssrShader = new THREE.ShaderMaterial({
+      uniforms: {
+        tDiffuse: { value: null },
+        tNormal: { value: null },
+        tDepth: { value: null },
+        tMetalness: { value: null },
+        
+        cameraNear: { value: 0.1 },
+        cameraFar: { value: 1000 },
+        resolution: { value: new THREE.Vector2() },
+        
+        maxDistance: { value: 100 },
+        stride: { value: 1.0 },
+        thickness: { value: 0.5 },
+        jitter: { value: 1.0 },
+        maxSteps: { value: 64 },
+        binarySearchSteps: { value: 4 }
+      },
+      
+      fragmentShader: `
+        uniform sampler2D tDiffuse;
+        uniform sampler2D tNormal;
+        uniform sampler2D tDepth;
+        uniform sampler2D tMetalness;
+        
+        uniform float cameraNear;
+        uniform float cameraFar;
+        uniform vec2 resolution;
+        uniform float maxDistance;
+        uniform float stride;
+        uniform float thickness;
+        uniform float jitter;
+        uniform int maxSteps;
+        uniform int binarySearchSteps;
+        
+        varying vec2 vUv;
+        
+        // ... (rest of SSR implementation)
+        
+        vec4 raymarch(vec3 origin, vec3 direction, out float hitDepth) {
+          // Raymarch in screen space
+          float stepSize = stride / float(maxSteps);
+          vec3 step = direction * stepSize;
+          
+          vec3 currentPos = origin;
+          
+          for (int i = 0; i < maxSteps; i++) {
+            currentPos += step;
+            
+            // Project to screen space
+            vec2 screenPos = currentPos.xy / resolution;
+            
+            // Check bounds
+            if (any(lessThan(screenPos, vec2(0.0))) || 
+                any(greaterThan(screenPos, vec2(1.0)))) {
+              return vec4(0.0);
+            }
+            
+            // Sample depth
+            float sceneDepth = texture2D(tDepth, screenPos).r;
+            
+            // Check intersection
+            if (currentPos.z > sceneDepth && 
+                currentPos.z - sceneDepth < thickness) {
+              // Binary search for precise hit
+              vec3 hitPos = binarySearch(currentPos - step, currentPos, sceneDepth);
+              hitDepth = hitPos.z;
+              
+              vec2 hitUV = hitPos.xy / resolution;
+              return texture2D(tDiffuse, hitUV);
+            }
+          }
+          
+          return vec4(0.0);
+        }
+        
+        void main() {
+          vec3 normal = texture2D(tNormal, vUv).xyz * 2.0 - 1.0;
+          float depth = texture2D(tDepth, vUv).r;
+          float metalness = texture2D(tMetalness, vUv).r;
+          
+          // Calculate reflection direction
+          vec3 viewDir = normalize(cameraPosition - worldPosition);
+          vec3 reflectionDir = reflect(-viewDir, normal);
+          
+          // Raymarch for reflection
+          float hitDepth;
+          vec4 reflection = raymarch(worldPosition, reflectionDir, hitDepth);
+          
+          // Fade based on metalness
+          reflection.a *= metalness;
+          
+          // Fade at screen edges
+          vec2 edgeFade = smoothstep(0.0, 0.1, vUv) * 
+                         smoothstep(1.0, 0.9, vUv);
+          reflection.a *= edgeFade.x * edgeFade.y;
+          
+          vec4 baseColor = texture2D(tDiffuse, vUv);
+          gl_FragColor = mix(baseColor, reflection, reflection.a);
+        }
+      `
+    });
+  }
+}
+```
+
+#### D.2 Temporal Anti-Aliasing (TAA)
+**Purpose**: Smooth edges over time
+
+```typescript
+// File: src/effects/TemporalAntiAliasing.ts
+// ENHANCEMENT: TAA for clean image
+class TemporalAntiAliasingPass {
+  private taaShader: THREE.ShaderMaterial;
+  private historyBuffer: THREE.WebGLRenderTarget;
+  private jitterIndex = 0;
+  private haltonSequence: THREE.Vector2[] = [];
+  
+  constructor(width: number, height: number) {
+    this.historyBuffer = new THREE.WebGLRenderTarget(width, height);
+    this.generateHaltonSequence();
+    this.createTAAShader();
+  }
+  
+  private generateHaltonSequence() {
+    // Generate 8-sample Halton sequence for jitter
+    for (let i = 0; i < 8; i++) {
+      this.haltonSequence.push(new THREE.Vector2(
+        this.halton(i + 1, 2) - 0.5,
+        this.halton(i + 1, 3) - 0.5
+      ));
+    }
+  }
+  
+  private halton(index: number, base: number): number {
+    let f = 1;
+    let r = 0;
+    let i = index;
+    
+    while (i > 0) {
+      f = f / base;
+      r = r + f * (i % base);
+      i = Math.floor(i / base);
+    }
+    
+    return r;
+  }
+  
+  getJitter(): THREE.Vector2 {
+    const jitter = this.haltonSequence[this.jitterIndex];
+    this.jitterIndex = (this.jitterIndex + 1) % this.haltonSequence.length;
+    return jitter;
+  }
+  
+  private createTAAShader() {
+    this.taaShader = new THREE.ShaderMaterial({
+      uniforms: {
+        tCurrent: { value: null },
+        tHistory: { value: null },
+        tVelocity: { value: null },
+        blendFactor: { value: 0.1 }
+      },
+      
+      fragmentShader: `
+        uniform sampler2D tCurrent;
+        uniform sampler2D tHistory;
+        uniform sampler2D tVelocity;
+        uniform float blendFactor;
+        
+        varying vec2 vUv;
+        
+        vec3 RGB2YCoCg(vec3 rgb) {
+          float Y = dot(rgb, vec3(0.25, 0.5, 0.25));
+          float Co = dot(rgb, vec3(0.5, 0.0, -0.5));
+          float Cg = dot(rgb, vec3(-0.25, 0.5, -0.25));
+          return vec3(Y, Co, Cg);
+        }
+        
+        vec3 YCoCg2RGB(vec3 ycocg) {
+          float Y = ycocg.x;
+          float Co = ycocg.y;
+          float Cg = ycocg.z;
+          float r = Y + Co - Cg;
+          float g = Y + Cg;
+          float b = Y - Co - Cg;
+          return vec3(r, g, b);
+        }
+        
+        void main() {
+          vec2 velocity = texture2D(tVelocity, vUv).rg;
+          vec2 historyUV = vUv - velocity;
+          
+          vec4 currentColor = texture2D(tCurrent, vUv);
+          vec4 historyColor = texture2D(tHistory, historyUV);
+          
+          // Discard history if off-screen
+          if (any(lessThan(historyUV, vec2(0.0))) || 
+              any(greaterThan(historyUV, vec2(1.0)))) {
+            gl_FragColor = currentColor;
+            return;
+          }
+          
+          // Convert to YCoCg for better color clamping
+          vec3 currentYCoCg = RGB2YCoCg(currentColor.rgb);
+          vec3 historyYCoCg = RGB2YCoCg(historyColor.rgb);
+          
+          // Neighborhood clamping
+          vec3 minColor = vec3(999.0);
+          vec3 maxColor = vec3(-999.0);
+          
+          for (int x = -1; x <= 1; x++) {
+            for (int y = -1; y <= 1; y++) {
+              vec2 offset = vec2(x, y) / resolution;
+              vec3 neighborColor = RGB2YCoCg(texture2D(tCurrent, vUv + offset).rgb);
+              minColor = min(minColor, neighborColor);
+              maxColor = max(maxColor, neighborColor);
+            }
+          }
+          
+          // Clamp history
+          historyYCoCg = clamp(historyYCoCg, minColor, maxColor);
+          
+          // Blend
+          vec3 blendedYCoCg = mix(historyYCoCg, currentYCoCg, blendFactor);
+          vec3 blendedRGB = YCoCg2RGB(blendedYCoCg);
+          
+          gl_FragColor = vec4(blendedRGB, currentColor.a);
+        }
+      `
+    });
+  }
+}
+```
+
+
+---
+
+### SECTION E: ADVANCED VISUAL TECHNIQUES
+
+#### E.1 Subsurface Scattering (SSS)
+**Purpose**: Realistic skin, leaves, wax
+
+```typescript
+// File: src/materials/SubsurfaceScattering.ts
+// ENHANCEMENT: SSS for organic materials
+class SubsurfaceScatteringSystem {
+  private sssShader: THREE.ShaderMaterial;
+  
+  createSSSMaterial(params: SSSParams) {
+    return new THREE.ShaderMaterial({
+      uniforms: {
+        // Base PBR
+        baseColor: { value: params.color },
+        roughness: { value: params.roughness },
+        
+        // SSS specific
+        scatterDistance: { value: params.scatterDistance },
+        scatterColor: { value: params.scatterColor },
+        thickness: { value: params.thickness },
+        thicknessMap: { value: params.thicknessMap },
+        
+        // Lighting
+        lightPosition: { value: new THREE.Vector3() },
+        lightColor: { value: new THREE.Color(1, 1, 1) },
+        lightIntensity: { value: 1.0 }
+      },
+      
+      fragmentShader: `
+        uniform vec3 baseColor;
+        uniform float roughness;
+        uniform float scatterDistance;
+        uniform vec3 scatterColor;
+        uniform float thickness;
+        uniform sampler2D thicknessMap;
+        
+        uniform vec3 lightPosition;
+        uniform vec3 lightColor;
+        uniform float lightIntensity;
+        
+        varying vec3 vWorldPosition;
+        varying vec3 vNormal;
+        varying vec2 vUv;
+        
+        // Approximation of subsurface scattering
+        vec3 calculateSSS(vec3 normal, vec3 lightDir, vec3 viewDir, float thick) {
+          // Translucency (light passing through)
+          vec3 H = normalize(lightDir + normal * scatterDistance);
+          float VdotH = pow(saturate(dot(viewDir, -H)), 2.0);
+          float translucency = VdotH * thick;
+          
+          // Wrap lighting for soft diffuse
+          float wrapNdotL = (dot(normal, lightDir) + 1.0) * 0.5;
+          
+          vec3 scatter = scatterColor * translucency * wrapNdotL;
+          
+          return scatter * lightColor * lightIntensity;
+        }
+        
+        void main() {
+          vec3 normal = normalize(vNormal);
+          vec3 lightDir = normalize(lightPosition - vWorldPosition);
+          vec3 viewDir = normalize(cameraPosition - vWorldPosition);
+          
+          float thick = texture2D(thicknessMap, vUv).r * thickness;
+          
+          // Standard diffuse
+          vec3 diffuse = baseColor * max(dot(normal, lightDir), 0.0);
+          
+          // Add SSS
+          vec3 sss = calculateSSS(normal, lightDir, viewDir, thick);
+          
+          vec3 finalColor = diffuse + sss;
+          
+          gl_FragColor = vec4(finalColor, 1.0);
+        }
+      `
+    });
+  }
+  
+  // ENHANCEMENT: Presets for common materials
+  getPreset(type: 'skin' | 'leaves' | 'wax' | 'marble'): SSSParams {
+    const presets = {
+      skin: {
+        color: new THREE.Color(0.95, 0.75, 0.65),
+        scatterDistance: 2.0,
+        scatterColor: new THREE.Color(1.0, 0.4, 0.25),
+        thickness: 1.0,
+        roughness: 0.5
+      },
+      leaves: {
+        color: new THREE.Color(0.2, 0.5, 0.2),
+        scatterDistance: 1.5,
+        scatterColor: new THREE.Color(0.4, 0.8, 0.3),
+        thickness: 0.5,
+        roughness: 0.7
+      },
+      wax: {
+        color: new THREE.Color(0.95, 0.95, 0.85),
+        scatterDistance: 3.0,
+        scatterColor: new THREE.Color(1.0, 1.0, 0.9),
+        thickness: 2.0,
+        roughness: 0.3
+      },
+      marble: {
+        color: new THREE.Color(0.9, 0.9, 0.9),
+        scatterDistance: 5.0,
+        scatterColor: new THREE.Color(0.95, 0.95, 0.95),
+        thickness: 3.0,
+        roughness: 0.2
+      }
+    };
+    
+    return presets[type];
+  }
+}
+```
+
+#### E.2 Parallax Occlusion Mapping (POM)
+**Purpose**: 3D depth from 2D textures
+
+```typescript
+// File: src/materials/ParallaxOcclusionMapping.ts
+// ENHANCEMENT: POM for detailed surfaces
+class ParallaxOcclusionMappingSystem {
+  createPOMShader(heightMap: THREE.Texture, scale: number = 0.1) {
+    return new THREE.ShaderMaterial({
+      uniforms: {
+        heightMap: { value: heightMap },
+        heightScale: { value: scale },
+        minLayers: { value: 8 },
+        maxLayers: { value: 32 }
+      },
+      
+      vertexShader: `
+        varying vec2 vUv;
+        varying vec3 vViewDir;
+        varying vec3 vNormal;
+        varying vec3 vTangent;
+        varying vec3 vBitangent;
+        
+        void main() {
+          vUv = uv;
+          vNormal = normalize(normalMatrix * normal);
+          vTangent = normalize(normalMatrix * tangent.xyz);
+          vBitangent = cross(vNormal, vTangent) * tangent.w;
+          
+          // View direction in tangent space
+          vec3 worldPos = (modelMatrix * vec4(position, 1.0)).xyz;
+          vec3 viewDir = worldPos - cameraPosition;
+          
+          vViewDir = vec3(
+            dot(viewDir, vTangent),
+            dot(viewDir, vBitangent),
+            dot(viewDir, vNormal)
+          );
+          
+          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        }
+      `,
+      
+      fragmentShader: `
+        uniform sampler2D heightMap;
+        uniform float heightScale;
+        uniform float minLayers;
+        uniform float maxLayers;
+        
+        varying vec2 vUv;
+        varying vec3 vViewDir;
+        
+        vec2 parallaxOcclusionMapping(vec2 texCoords, vec3 viewDir) {
+          // Number of depth layers based on view angle
+          float numLayers = mix(maxLayers, minLayers, abs(dot(vec3(0, 0, 1), viewDir)));
+          
+          // Layer depth
+          float layerDepth = 1.0 / numLayers;
+          float currentLayerDepth = 0.0;
+          
+          // Amount to shift per layer
+          vec2 P = viewDir.xy * heightScale;
+          vec2 deltaTexCoords = P / numLayers;
+          
+          // Start values
+          vec2 currentTexCoords = texCoords;
+          float currentDepthMapValue = texture2D(heightMap, currentTexCoords).r;
+          
+          // Steep parallax mapping
+          while (currentLayerDepth < currentDepthMapValue) {
+            currentTexCoords -= deltaTexCoords;
+            currentDepthMapValue = texture2D(heightMap, currentTexCoords).r;
+            currentLayerDepth += layerDepth;
+          }
+          
+          // Parallax occlusion mapping (interpolation)
+          vec2 prevTexCoords = currentTexCoords + deltaTexCoords;
+          
+          float afterDepth = currentDepthMapValue - currentLayerDepth;
+          float beforeDepth = texture2D(heightMap, prevTexCoords).r - 
+                             currentLayerDepth + layerDepth;
+          
+          float weight = afterDepth / (afterDepth - beforeDepth);
+          vec2 finalTexCoords = prevTexCoords * weight + currentTexCoords * (1.0 - weight);
+          
+          return finalTexCoords;
+        }
+        
+        void main() {
+          vec3 viewDir = normalize(vViewDir);
+          vec2 parallaxUV = parallaxOcclusionMapping(vUv, viewDir);
+          
+          // Discard fragments outside texture bounds
+          if (parallaxUV.x > 1.0 || parallaxUV.y > 1.0 || 
+              parallaxUV.x < 0.0 || parallaxUV.y < 0.0) {
+            discard;
+          }
+          
+          // Sample textures with parallax-adjusted UV
+          vec4 baseColor = texture2D(baseColorMap, parallaxUV);
+          vec3 normal = texture2D(normalMap, parallaxUV).rgb * 2.0 - 1.0;
+          
+          // ... rest of lighting calculations ...
+          
+          gl_FragColor = vec4(finalColor, 1.0);
+        }
+      `
+    });
+  }
+}
+```
+
+#### E.3 Tessellation & Displacement
+**Purpose**: Dynamic geometry detail
+
+```typescript
+// File: src/materials/TessellationSystem.ts
+// ENHANCEMENT: Adaptive tessellation for terrain
+class TessellationSystem {
+  // Note: WebGL doesn't support tessellation shaders natively
+  // This is a CPU-based subdivision approach
+  
+  subdivideMesh(geometry: THREE.BufferGeometry, level: number): THREE.BufferGeometry {
+    const modifier = new THREE.SubdivisionModifier(level);
+    const smoothGeometry = modifier.modify(geometry);
+    return smoothGeometry;
+  }
+  
+  // ENHANCEMENT: Adaptive subdivision based on distance
+  adaptiveTessellation(
+    geometry: THREE.BufferGeometry, 
+    cameraPosition: THREE.Vector3,
+    lodLevels: { distance: number, subdivisions: number }[]
+  ): THREE.BufferGeometry {
+    
+    const positions = geometry.attributes.position.array;
+    const faces: Face[] = [];
+    
+    // Group vertices into faces
+    for (let i = 0; i < positions.length; i += 9) {
+      const v1 = new THREE.Vector3(positions[i], positions[i+1], positions[i+2]);
+      const v2 = new THREE.Vector3(positions[i+3], positions[i+4], positions[i+5]);
+      const v3 = new THREE.Vector3(positions[i+6], positions[i+7], positions[i+8]);
+      
+      // Calculate center
+      const center = new THREE.Vector3()
+        .add(v1).add(v2).add(v3)
+        .divideScalar(3);
+      
+      // Distance to camera
+      const distance = center.distanceTo(cameraPosition);
+      
+      // Determine subdivision level
+      let subdivisions = 0;
+      for (const lod of lodLevels) {
+        if (distance < lod.distance) {
+          subdivisions = lod.subdivisions;
+          break;
+        }
+      }
+      
+      // Subdivide face
+      if (subdivisions > 0) {
+        const subdivided = this.subdivideFace(v1, v2, v3, subdivisions);
+        faces.push(...subdivided);
+      } else {
+        faces.push({ v1, v2, v3 });
+      }
+    }
+    
+    // Rebuild geometry from faces
+    return this.facesToGeometry(faces);
+  }
+  
+  private subdivideFace(
+    v1: THREE.Vector3, 
+    v2: THREE.Vector3, 
+    v3: THREE.Vector3, 
+    level: number
+  ): Face[] {
+    if (level === 0) {
+      return [{ v1, v2, v3 }];
+    }
+    
+    // Midpoints
+    const m1 = new THREE.Vector3().addVectors(v1, v2).multiplyScalar(0.5);
+    const m2 = new THREE.Vector3().addVectors(v2, v3).multiplyScalar(0.5);
+    const m3 = new THREE.Vector3().addVectors(v3, v1).multiplyScalar(0.5);
+    
+    // Recursively subdivide 4 new triangles
+    return [
+      ...this.subdivideFace(v1, m1, m3, level - 1),
+      ...this.subdivideFace(m1, v2, m2, level - 1),
+      ...this.subdivideFace(m3, m2, v3, level - 1),
+      ...this.subdivideFace(m1, m2, m3, level - 1)
+    ];
+  }
+}
+```
+
+---
+
+### SECTION F: OPTIMIZATION TECHNIQUES
+
+#### F.1 Occlusion Culling
+**Purpose**: Don't render what's hidden
+
+```typescript
+// File: src/optimization/OcclusionCulling.ts
+// ENHANCEMENT: Hardware occlusion queries
+class OcclusionCullingSystem {
+  private occlusionQueries = new Map<string, WebGLQuery>();
+  private queryResults = new Map<string, boolean>();
+  private proxyGeometry: THREE.BoxGeometry;
+  
+  constructor(private gl: WebGL2RenderingContext) {
+    this.proxyGeometry = new THREE.BoxGeometry(1, 1, 1);
+  }
+  
+  // ENHANCEMENT: Create occlusion query for object
+  createQuery(objectId: string): void {
+    const query = this.gl.createQuery();
+    if (query) {
+      this.occlusionQueries.set(objectId, query);
+    }
+  }
+  
+  // ENHANCEMENT: Test object visibility
+  testOcclusion(object: THREE.Object3D, camera: THREE.Camera): void {
+    const query = this.occlusionQueries.get(object.uuid);
+    if (!query) return;
+    
+    // Begin query
+    this.gl.beginQuery(this.gl.ANY_SAMPLES_PASSED, query);
+    
+    // Render bounding box as proxy
+    this.renderBoundingBox(object, camera);
+    
+    // End query
+    this.gl.endQuery(this.gl.ANY_SAMPLES_PASSED);
+  }
+  
+  // ENHANCEMENT: Check query results
+  updateVisibility(): void {
+    for (const [objectId, query] of this.occlusionQueries) {
+      const available = this.gl.getQueryParameter(query, this.gl.QUERY_RESULT_AVAILABLE);
+      
+      if (available) {
+        const result = this.gl.getQueryParameter(query, this.gl.QUERY_RESULT);
+        this.queryResults.set(objectId, result > 0);
+      }
+    }
+  }
+  
+  isVisible(objectId: string): boolean {
+    return this.queryResults.get(objectId) ?? true; // Default visible
+  }
+  
+  private renderBoundingBox(object: THREE.Object3D, camera: THREE.Camera): void {
+    // Get bounding box
+    const box = new THREE.Box3().setFromObject(object);
+    const size = box.getSize(new THREE.Vector3());
+    const center = box.getCenter(new THREE.Vector3());
+    
+    // Create proxy mesh
+    const proxy = new THREE.Mesh(
+      this.proxyGeometry,
+      new THREE.MeshBasicMaterial({ colorWrite: false, depthWrite: false })
+    );
+    
+    proxy.position.copy(center);
+    proxy.scale.copy(size);
+    
+    // Render proxy (writes to depth buffer only)
+    // ... render proxy ...
+  }
+}
+```
+
+#### F.2 Geometry Instancing Advanced
+**Purpose**: Ultimate draw call reduction
+
+```typescript
+// File: src/optimization/AdvancedInstancing.ts
+// ENHANCEMENT: Multi-level instancing with culling
+class AdvancedInstancingSystem {
+  private instanceGroups = new Map<string, InstanceGroup>();
+  
+  // ENHANCEMENT: Create instanced group with LOD
+  createInstanceGroup(
+    modelId: string, 
+    maxInstances: number,
+    lodLevels: LODLevel[]
+  ): InstanceGroup {
+    
+    const group: InstanceGroup = {
+      instances: [],
+      lodGroups: [],
+      maxInstances,
+      currentCount: 0
+    };
+    
+    // Create instanced mesh for each LOD level
+    for (const lod of lodLevels) {
+      const geometry = this.loadGeometry(modelId, lod.quality);
+      const material = this.loadMaterial(modelId);
+      
+      const instancedMesh = new THREE.InstancedMesh(
+        geometry,
+        material,
+        maxInstances
+      );
+      
+      instancedMesh.frustumCulled = true;
+      instancedMesh.castShadow = true;
+      instancedMesh.receiveShadow = true;
+      
+      group.lodGroups.push({
+        mesh: instancedMesh,
+        distance: lod.distance,
+        quality: lod.quality
+      });
+    }
+    
+    this.instanceGroups.set(modelId, group);
+    return group;
+  }
+  
+  // ENHANCEMENT: Update instances with frustum culling
+  updateInstances(cameraPosition: THREE.Vector3, frustum: THREE.Frustum): void {
+    for (const [modelId, group] of this.instanceGroups) {
+      // Reset counts
+      group.lodGroups.forEach(lod => lod.mesh.count = 0);
+      
+      // Sort instances by distance
+      group.instances.sort((a, b) => {
+        const distA = a.position.distanceTo(cameraPosition);
+        const distB = b.position.distanceTo(cameraPosition);
+        return distA - distB;
+      });
+      
+      // Update each instance
+      for (const instance of group.instances) {
+        // Frustum culling
+        if (!this.isInFrustum(instance, frustum)) {
+          continue;
+        }
+        
+        // Determine LOD level
+        const distance = instance.position.distanceTo(cameraPosition);
+        const lodGroup = this.selectLOD(group.lodGroups, distance);
+        
+        if (lodGroup && lodGroup.mesh.count < group.maxInstances) {
+          // Update matrix
+          const matrix = new THREE.Matrix4();
+          matrix.compose(
+            instance.position,
+            instance.rotation,
+            instance.scale
+          );
+          
+          lodGroup.mesh.setMatrixAt(lodGroup.mesh.count, matrix);
+          lodGroup.mesh.count++;
+        }
+      }
+      
+      // Update all LOD meshes
+      group.lodGroups.forEach(lod => {
+        if (lod.mesh.count > 0) {
+          lod.mesh.instanceMatrix.needsUpdate = true;
+        }
+      });
+    }
+  }
+  
+  private isInFrustum(instance: InstanceData, frustum: THREE.Frustum): boolean {
+    // Create bounding sphere for instance
+    const sphere = new THREE.Sphere(
+      instance.position,
+      instance.boundingRadius || 1.0
+    );
+    
+    return frustum.intersectsSphere(sphere);
+  }
+  
+  private selectLOD(lodGroups: LODGroup[], distance: number): LODGroup | null {
+    for (const lod of lodGroups) {
+      if (distance <= lod.distance) {
+        return lod;
+      }
+    }
+    return null; // Beyond max distance
+  }
+}
+```
+
+#### F.3 Texture Streaming & Compression
+**Purpose**: Reduce memory and bandwidth
+
+```typescript
+// File: src/optimization/TextureStreaming.ts
+// ENHANCEMENT: Progressive texture loading
+class TextureStreamingSystem {
+  private textureCache = new Map<string, StreamedTexture>();
+  private loadQueue: TextureLoadRequest[] = [];
+  private isLoading = false;
+  
+  // ENHANCEMENT: Load texture progressively
+  async loadTexture(
+    path: string, 
+    priority: 'high' | 'medium' | 'low' = 'medium'
+  ): Promise<THREE.Texture> {
+    
+    // Check cache
+    const cached = this.textureCache.get(path);
+    if (cached && cached.currentQuality === 'high') {
+      return cached.texture;
+    }
+    
+    // Create placeholder
+    const placeholder = this.createPlaceholder();
+    
+    // Queue loading
+    this.loadQueue.push({
+      path,
+      priority,
+      placeholder,
+      qualities: ['low', 'medium', 'high']
+    });
+    
+    // Sort by priority
+    this.loadQueue.sort((a, b) => {
+      const priorities = { high: 0, medium: 1, low: 2 };
+      return priorities[a.priority] - priorities[b.priority];
+    });
+    
+    // Start loading if not already
+    if (!this.isLoading) {
+      this.processQueue();
+    }
+    
+    return placeholder;
+  }
+  
+  private async processQueue(): Promise<void> {
+    this.isLoading = true;
+    
+    while (this.loadQueue.length > 0) {
+      const request = this.loadQueue.shift();
+      if (!request) break;
+      
+      // Load progressively
+      for (const quality of request.qualities) {
+        const texturePath = this.getQualityPath(request.path, quality);
+        
+        try {
+          const texture = await this.loadTextureFile(texturePath);
+          
+          // Apply compression if supported
+          if (this.supportsCompression('s3tc')) {
+            texture.format = THREE.RGBA_S3TC_DXT5_Format;
+          }
+          
+          // Update placeholder
+          request.placeholder.image = texture.image;
+          request.placeholder.needsUpdate = true;
+          
+          // Cache
+          this.textureCache.set(request.path, {
+            texture: request.placeholder,
+            currentQuality: quality
+          });
+          
+          // Give time to other operations
+          await this.nextFrame();
+          
+        } catch (error) {
+          console.error(`Failed to load texture: ${texturePath}`, error);
+        }
+      }
+    }
+    
+    this.isLoading = false;
+  }
+  
+  private getQualityPath(basePath: string, quality: string): string {
+    const ext = basePath.split('.').pop();
+    const base = basePath.slice(0, -ext!.length - 1);
+    
+    const sizes = {
+      low: '_256',
+      medium: '_1024',
+      high: '_2048'
+    };
+    
+    return `${base}${sizes[quality]}.${ext}`;
+  }
+  
+  private supportsCompression(format: string): boolean {
+    const gl = document.createElement('canvas').getContext('webgl2');
+    if (!gl) return false;
+    
+    const extensions = {
+      's3tc': 'WEBGL_compressed_texture_s3tc',
+      'astc': 'WEBGL_compressed_texture_astc',
+      'etc': 'WEBGL_compressed_texture_etc'
+    };
+    
+    return !!gl.getExtension(extensions[format]);
+  }
+  
+  private nextFrame(): Promise<void> {
+    return new Promise(resolve => requestAnimationFrame(() => resolve()));
+  }
+  
+  // ENHANCEMENT: Compress textures to KTX2
+  async compressToKTX2(texture: THREE.Texture): Promise<THREE.CompressedTexture> {
+    // Use basis_universal for compression
+    const ktx2Loader = new KTX2Loader();
+    ktx2Loader.setTranscoderPath('/basis/');
+    ktx2Loader.detectSupport(renderer);
+    
+    // Convert and compress
+    // ... compression logic ...
+    
+    return compressedTexture;
+  }
+}
+```
+
+---
+
+### SECTION G: VISUAL DEBUGGING & PROFILING
+
+#### G.1 Rendering Debugger
+**Purpose**: Visualize rendering pipeline
+
+```typescript
+// File: src/debug/RenderingDebugger.ts
+// ENHANCEMENT: Comprehensive rendering debug tools
+class RenderingDebugger {
+  private debugMode: DebugMode = 'none';
+  private wireframeOverlay: THREE.LineSegments;
+  private normalVisualizer: THREE.LineSegments;
+  
+  // ENHANCEMENT: Debug visualization modes
+  setDebugMode(mode: DebugMode): void {
+    this.debugMode = mode;
+    
+    switch (mode) {
+      case 'wireframe':
+        this.showWireframe();
+        break;
+      case 'normals':
+        this.showNormals();
+        break;
+      case 'uvs':
+        this.showUVs();
+        break;
+      case 'overdraw':
+        this.showOverdraw();
+        break;
+      case 'lightComplexity':
+        this.showLightComplexity();
+        break;
+      case 'shadowCascades':
+        this.showShadowCascades();
+        break;
+      case 'gbuffer':
+        this.showGBuffer();
+        break;
+    }
+  }
+  
+  private showWireframe(): void {
+    scene.traverse((object) => {
+      if (object instanceof THREE.Mesh) {
+        object.material.wireframe = true;
+      }
+    });
+  }
+  
+  private showNormals(): void {
+    scene.traverse((object) => {
+      if (object instanceof THREE.Mesh) {
+        const helper = new THREE.VertexNormalsHelper(object, 0.5, 0x00ff00);
+        scene.add(helper);
+      }
+    });
+  }
+  
+  private showOverdraw(): void {
+    // Render with additive blending to show overdraw
+    scene.traverse((object) => {
+      if (object instanceof THREE.Mesh) {
+        object.material = new THREE.MeshBasicMaterial({
+          color: 0x111111,
+          blending: THREE.AdditiveBlending,
+          depthTest: false
+        });
+      }
+    });
+  }
+  
+  private showLightComplexity(): void {
+    // Heat map showing number of lights affecting each pixel
+    const heatmapShader = new THREE.ShaderMaterial({
+      fragmentShader: `
+        uniform int lightCount;
+        
+        vec3 heatmap(float value) {
+          vec3 color;
+          if (value < 0.25) {
+            color = mix(vec3(0, 0, 1), vec3(0, 1, 1), value * 4.0);
+          } else if (value < 0.5) {
+            color = mix(vec3(0, 1, 1), vec3(0, 1, 0), (value - 0.25) * 4.0);
+          } else if (value < 0.75) {
+            color = mix(vec3(0, 1, 0), vec3(1, 1, 0), (value - 0.5) * 4.0);
+          } else {
+            color = mix(vec3(1, 1, 0), vec3(1, 0, 0), (value - 0.75) * 4.0);
+          }
+          return color;
+        }
+        
+        void main() {
+          float complexity = float(lightCount) / 10.0;
+          gl_FragColor = vec4(heatmap(complexity), 1.0);
+        }
+      `
+    });
+  }
+  
+  // ENHANCEMENT: Performance stats overlay
+  showPerformanceStats(): void {
+    const stats = {
+      fps: Math.round(1000 / deltaTime),
+      drawCalls: renderer.info.render.calls,
+      triangles: renderer.info.render.triangles,
+      geometries: renderer.info.memory.geometries,
+      textures: renderer.info.memory.textures,
+      programs: renderer.info.programs.length
+    };
+    
+    this.displayStats(stats);
+  }
+  
+  private displayStats(stats: RenderStats): void {
+    const overlay = document.createElement('div');
+    overlay.style.cssText = `
+      position: fixed;
+      top: 10px;
+      left: 10px;
+      background: rgba(0, 0, 0, 0.8);
+      color: #0f0;
+      font-family: monospace;
+      padding: 10px;
+      font-size: 12px;
+      z-index: 9999;
+    `;
+    
+    overlay.innerHTML = `
+      FPS: ${stats.fps}
+      Draw Calls: ${stats.drawCalls}
+      Triangles: ${stats.triangles.toLocaleString()}
+      Geometries: ${stats.geometries}
+      Textures: ${stats.textures}
+      Shaders: ${stats.programs}
+    `;
+    
+    document.body.appendChild(overlay);
+  }
+}
+```
+
+---
+
+### SECTION H: ASSET PIPELINE FOR EXTRACTED ASSETS
+
+#### H.1 Asset Optimization Pipeline
+**Purpose**: Process 4,885 assets for optimal performance
+
+```typescript
+// File: src/pipeline/AssetOptimizer.ts
+// ENHANCEMENT: Batch process all extracted assets
+class AssetOptimizationPipeline {
+  private assetPaths = {
+    characters: '../extracted_assets/Universal_Base_Characters/',
+    nature: '../extracted_assets/Stylized_Nature_MegaKit/',
+    medieval: '../extracted_assets/Medieval_Village_MegaKit/',
+    dungeons: '../extracted_assets/KayKit_DungeonRemastered/',
+    props: '../extracted_assets/Fantasy_Props_MegaKit/',
+    audio: '../extracted_assets/Fantasy_RPG_Music/'
+  };
+  
+  async optimizeAllAssets(): Promise<void> {
+    console.log('Starting asset optimization pipeline...');
+    
+    // Process each asset category
+    for (const [category, path] of Object.entries(this.assetPaths)) {
+      console.log(`Optimizing ${category}...`);
+      await this.optimizeCategory(category, path);
+    }
+    
+    console.log('Asset optimization complete!');
+  }
+  
+  private async optimizeCategory(category: string, basePath: string): Promise<void> {
+    const files = await this.getFiles(basePath);
+    
+    for (const file of files) {
+      const ext = file.split('.').pop()?.toLowerCase();
+      
+      if (['obj', 'fbx', 'gltf', 'glb'].includes(ext!)) {
+        await this.optimizeModel(file);
+      } else if (['png', 'jpg', 'jpeg'].includes(ext!)) {
+        await this.optimizeTexture(file);
+      } else if (['mp3', 'wav', 'ogg'].includes(ext!)) {
+        await this.optimizeAudio(file);
+      }
+    }
+  }
+  
+  private async optimizeModel(filePath: string): Promise<void> {
+    // Load model
+    const model = await this.loadModel(filePath);
+    
+    // ENHANCEMENT: Model optimizations
+    
+    // 1. Merge duplicate vertices
+    model.geometry = BufferGeometryUtils.mergeVertices(model.geometry);
+    
+    // 2. Compute vertex normals if missing
+    if (!model.geometry.attributes.normal) {
+      model.geometry.computeVertexNormals();
+    }
+    
+    // 3. Generate tangents for normal mapping
+    model.geometry.computeTangents();
+    
+    // 4. Create LOD versions
+    const lodVersions = this.generateLODs(model, [
+      { distance: 0, decimation: 1.0 },    // Full quality
+      { distance: 50, decimation: 0.5 },   // Half polygons
+      { distance: 100, decimation: 0.25 }, // Quarter polygons
+      { distance: 200, decimation: 0.1 }   // Tenth polygons
+    ]);
+    
+    // 5. Compress geometry
+    const compressed = this.compressGeometry(model.geometry);
+    
+    // 6. Save optimized versions
+    await this.saveOptimizedModel(filePath, {
+      original: model,
+      lods: lodVersions,
+      compressed: compressed
+    });
+  }
+  
+  private generateLODs(
+    model: THREE.Mesh, 
+    lodLevels: { distance: number, decimation: number }[]
+  ): THREE.Mesh[] {
+    const lods: THREE.Mesh[] = [];
+    
+    for (const level of lodLevels) {
+      const decimated = this.decimateGeometry(model.geometry, level.decimation);
+      const lodMesh = model.clone();
+      lodMesh.geometry = decimated;
+      lods.push(lodMesh);
+    }
+    
+    return lods;
+  }
+  
+  private decimateGeometry(
+    geometry: THREE.BufferGeometry, 
+    factor: number
+  ): THREE.BufferGeometry {
+    // Mesh decimation using edge collapse
+    // Reduces polygon count while preserving shape
+    
+    const simplifier = new MeshSimplifier(geometry);
+    return simplifier.simplify(factor);
+  }
+  
+  private async optimizeTexture(filePath: string): Promise<void> {
+    const texture = await this.loadTexture(filePath);
+    
+    // ENHANCEMENT: Texture optimizations
+    
+    // 1. Resize to power-of-two
+    const pot = this.resizeToPowerOfTwo(texture);
+    
+    // 2. Generate mipmaps
+    const mipmaps = this.generateMipmaps(pot);
+    
+    // 3. Compress to multiple formats
+    const compressed = await this.compressTexture(pot, [
+      'ktx2', // Basis Universal
+      'astc', // Mobile
+      's3tc'  // Desktop
+    ]);
+    
+    // 4. Save optimized versions
+    await this.saveOptimizedTexture(filePath, {
+      original: texture,
+      powerOfTwo: pot,
+      mipmaps: mipmaps,
+      compressed: compressed
+    });
+  }
+  
+  private resizeToPowerOfTwo(texture: THREE.Texture): THREE.Texture {
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d')!;
+    
+    // Find next power of two
+    canvas.width = this.nextPowerOfTwo(texture.image.width);
+    canvas.height = this.nextPowerOfTwo(texture.image.height);
+    
+    // Draw resized
+    ctx.drawImage(texture.image, 0, 0, canvas.width, canvas.height);
+    
+    const resized = texture.clone();
+    resized.image = canvas;
+    resized.needsUpdate = true;
+    
+    return resized;
+  }
+  
+  private nextPowerOfTwo(n: number): number {
+    return Math.pow(2, Math.ceil(Math.log2(n)));
+  }
+  
+  private generateMipmaps(texture: THREE.Texture): THREE.Texture[] {
+    const mipmaps: THREE.Texture[] = [];
+    let width = texture.image.width;
+    let height = texture.image.height;
+    
+    while (width > 1 || height > 1) {
+      width = Math.max(1, Math.floor(width / 2));
+      height = Math.max(1, Math.floor(height / 2));
+      
+      const mipmap = this.resizeTexture(texture, width, height);
+      mipmaps.push(mipmap);
+    }
+    
+    return mipmaps;
+  }
+  
+  private async optimizeAudio(filePath: string): Promise<void> {
+    // ENHANCEMENT: Audio optimizations
+    
+    // 1. Convert to optimal formats
+    await this.convertAudio(filePath, ['mp3', 'ogg']);
+    
+    // 2. Normalize volume
+    await this.normalizeAudio(filePath);
+    
+    // 3. Apply compression
+    await this.compressAudio(filePath, {
+      mp3: { bitrate: 128 },
+      ogg: { quality: 0.7 }
+    });
+  }
+}
+```
+
