@@ -12,9 +12,34 @@ import { GameMenu } from './ui/GameMenu';
  */
 
 async function main() {
+  // Version info for cache validation
+  const GAME_VERSION = '1.1.0';
+  const BUILD_TIMESTAMP = Date.now();
+  
   console.log('=================================================');
   console.log('   FANTASY SURVIVAL MMO');
+  console.log(`   Version: ${GAME_VERSION}`);
+  console.log(`   Build: ${new Date(BUILD_TIMESTAMP).toISOString()}`);
   console.log('=================================================');
+  
+  // Store version in localStorage to detect updates
+  const lastVersion = localStorage.getItem('game-version');
+  if (lastVersion && lastVersion !== GAME_VERSION) {
+    console.log(`[Update] New version detected: ${lastVersion} -> ${GAME_VERSION}`);
+    console.log('[Update] Clearing old cache...');
+    
+    // Clear old cached data on version change
+    try {
+      if ('caches' in window) {
+        const cacheNames = await caches.keys();
+        await Promise.all(cacheNames.map(name => caches.delete(name)));
+        console.log('[Update] ✓ Cache cleared');
+      }
+    } catch (e) {
+      console.warn('[Update] Could not clear cache:', e);
+    }
+  }
+  localStorage.setItem('game-version', GAME_VERSION);
   
   // Initialize asset loader for preloading
   const assetLoader = new AssetLoader();
