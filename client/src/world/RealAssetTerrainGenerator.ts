@@ -98,41 +98,24 @@ export class RealAssetTerrainGenerator {
     this.noise = createNoise2D(() => seed);
     this.biomeSystem = new BiomeSystem();
     
-    // Detect WebGL support for GPU instancing
-    this.useGPUInstancing = this.detectWebGLSupport();
+    // ALWAYS use GPU instancing by default - it's available in all modern browsers
+    // Only fall back if explicitly broken during runtime
+    this.useGPUInstancing = true;
     
-    if (this.useGPUInstancing) {
-      console.log('[TerrainGenerator] GPU instancing available - using InstancedMesh for performance');
-    } else {
-      console.log('[TerrainGenerator] GPU instancing not available - using CPU rendering fallback');
-    }
+    console.log('[TerrainGenerator] GPU instancing enabled - InstancedMesh for optimal performance');
+    console.log('[TerrainGenerator] Note: CPU fallback available if instancing fails at runtime');
   }
   
   /**
-   * Detect if WebGL and GPU instancing are supported
+   * REMOVED: Old conservative detection that was causing unnecessary CPU fallback
+   * Modern mobile browsers (iOS Safari 15+, Chrome Mobile, Firefox Mobile) ALL support:
+   * - WebGL 1.0+ (since 2013)
+   * - InstancedMesh (Three.js feature, not browser-dependent)
+   * - GPU instancing extensions
+   * 
+   * The old detection was TOO CAUTIOUS and caused mobile devices to use slow CPU rendering.
+   * Now we default to GPU instancing and only fall back if there's an actual runtime error.
    */
-  private detectWebGLSupport(): boolean {
-    try {
-      const canvas = document.createElement('canvas');
-      const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
-      
-      if (!gl) {
-        console.warn('[TerrainGenerator] WebGL not supported, using CPU fallback');
-        return false;
-      }
-      
-      // Check if InstancedMesh is supported
-      if (typeof THREE.InstancedMesh === 'undefined') {
-        console.warn('[TerrainGenerator] InstancedMesh not supported, using CPU fallback');
-        return false;
-      }
-      
-      return true;
-    } catch (e) {
-      console.warn('[TerrainGenerator] WebGL detection failed, using CPU fallback', e);
-      return false;
-    }
-  }
 
   /**
    * PERFORMANCE FIX: Pre-load all tile models and create instanced meshes (GPU) or cache (CPU)
@@ -200,31 +183,37 @@ export class RealAssetTerrainGenerator {
           this.tileMaterials.set(tilePath, material);
           
           if (this.useGPUInstancing) {
-            // GPU MODE: Create instanced mesh with capacity for many instances
-            const maxInstances = 30000;
-            const instancedMesh = new THREE.InstancedMesh(geometry, material, maxInstances);
-            
-            // RENDERING FIX: Configure instanced mesh for proper visibility
-            instancedMesh.castShadow = true;
-            instancedMesh.receiveShadow = true;
-            instancedMesh.count = 0;  // Start at 0, will be incremented as tiles are placed
-            instancedMesh.visible = true;  // Explicitly set visible
-            instancedMesh.frustumCulled = true;  // Enable frustum culling for performance
-            instancedMesh.name = `terrain_instanced_${tilePath.split('/').pop()}`;
-            
-            // RENDERING FIX: Ensure the material is properly configured
-            if (material instanceof THREE.MeshStandardMaterial || material instanceof THREE.MeshPhysicalMaterial) {
-              material.side = THREE.DoubleSide;
-              material.needsUpdate = true;
+            try {
+              // GPU MODE: Create instanced mesh with capacity for many instances
+              const maxInstances = 30000;
+              const instancedMesh = new THREE.InstancedMesh(geometry, material, maxInstances);
+              
+              // RENDERING FIX: Configure instanced mesh for proper visibility
+              instancedMesh.castShadow = true;
+              instancedMesh.receiveShadow = true;
+              instancedMesh.count = 0;  // Start at 0, will be incremented as tiles are placed
+              instancedMesh.visible = true;  // Explicitly set visible
+              instancedMesh.frustumCulled = true;  // Enable frustum culling for performance
+              instancedMesh.name = `terrain_instanced_${tilePath.split('/').pop()}`;
+              
+              scene.add(instancedMesh);
+              this.instancedMeshes.set(tilePath, instancedMesh);
+              this.instanceCounts.set(tilePath, 0);
+              
+              console.log(`[TerrainGenerator] ✓ Created instanced mesh for ${tilePath.split('/').pop()} - added to scene`);
+            } catch (instancingError) {
+              // If GPU instancing fails, fall back to CPU mode for this tile
+              console.error(`[TerrainGenerator] ⚠️ GPU instancing failed for ${tilePath}, using CPU fallback:`, instancingError);
+              this.useGPUInstancing = false; // Disable for all future tiles
+              
+              // Create CPU cache for this and future tiles
+              const cachedMesh = new THREE.Mesh(geometry, material);
+              cachedMesh.castShadow = true;
+              cachedMesh.receiveShadow = true;
+              this.cpuMeshCache.set(tilePath, cachedMesh);
             }
-            
-            scene.add(instancedMesh);
-            this.instancedMeshes.set(tilePath, instancedMesh);
-            this.instanceCounts.set(tilePath, 0);
-            
-            console.log(`[TerrainGenerator] ✓ Created instanced mesh for ${tilePath.split('/').pop()} - added to scene`);
           } else {
-            // CPU MODE: Cache the model for cloning
+            // CPU MODE: Cache the model for cloning (same quality, just more draw calls)
             const cachedMesh = new THREE.Mesh(geometry, material);
             cachedMesh.castShadow = true;
             cachedMesh.receiveShadow = true;

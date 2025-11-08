@@ -26,24 +26,25 @@ export class AssetLoader {
       model = gltf.scene;
       
       // RENDERING FIX: Ensure GLTF materials are properly configured
+      // These settings ensure CONSISTENT QUALITY in both GPU instancing and CPU fallback modes
       model.traverse((child) => {
         if (child instanceof THREE.Mesh) {
           // Ensure materials have proper rendering settings
           const materials = Array.isArray(child.material) ? child.material : [child.material];
           materials.forEach(mat => {
             if (mat) {
-              // CRITICAL FIX: Make materials opaque and visible
+              // CRITICAL FIX: Make materials opaque and visible (works in GPU & CPU modes)
               mat.transparent = false;
               mat.opacity = 1.0;
               mat.side = THREE.FrontSide; // Use FrontSide for proper culling
               mat.depthWrite = true;
               mat.depthTest = true;
               
-              // Fix for MeshStandardMaterial
+              // Fix for MeshStandardMaterial - PBR rendering for high quality
               if (mat instanceof THREE.MeshStandardMaterial) {
-                mat.flatShading = false; // Smooth shading
+                mat.flatShading = false; // Smooth shading (NOT blocky)
                 mat.metalness = 0; // Not metallic
-                mat.roughness = 0.8; // Slightly rough
+                mat.roughness = 0.8; // Slightly rough for realistic look
               }
               
               mat.needsUpdate = true;
