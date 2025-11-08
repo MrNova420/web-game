@@ -32,8 +32,20 @@ export class AssetLoader {
           const materials = Array.isArray(child.material) ? child.material : [child.material];
           materials.forEach(mat => {
             if (mat) {
-              // Fix see-through issues with double-sided rendering
-              mat.side = THREE.DoubleSide;
+              // CRITICAL FIX: Make materials opaque and visible
+              mat.transparent = false;
+              mat.opacity = 1.0;
+              mat.side = THREE.FrontSide; // Use FrontSide for proper culling
+              mat.depthWrite = true;
+              mat.depthTest = true;
+              
+              // Fix for MeshStandardMaterial
+              if (mat instanceof THREE.MeshStandardMaterial) {
+                mat.flatShading = false; // Smooth shading
+                mat.metalness = 0; // Not metallic
+                mat.roughness = 0.8; // Slightly rough
+              }
+              
               mat.needsUpdate = true;
             }
           });
@@ -46,6 +58,10 @@ export class AssetLoader {
           if (child.geometry && !child.geometry.attributes.normal) {
             child.geometry.computeVertexNormals();
           }
+          
+          // Make mesh visible
+          child.visible = true;
+          child.frustumCulled = true;
         }
       });
     } else if (extension === 'obj') {

@@ -256,12 +256,15 @@ export class GameEngine {
   private initializePlayerController(): void {
     console.log('[GameEngine] Initializing player controller...');
     
-    // Set camera at spawn position looking down at terrain
-    const startPosition = new THREE.Vector3(0, 25, 30);
+    // Set camera at spawn position looking DOWN at terrain (bird's eye view to start)
+    const startPosition = new THREE.Vector3(0, 50, 50);
     this.camera.position.copy(startPosition);
     
-    // Point camera to look at the terrain origin
+    // Point camera to look at terrain below
     this.camera.lookAt(0, 0, 0);
+    
+    console.log('[GameEngine] Camera positioned at:', startPosition);
+    console.log('[GameEngine] Camera looking at: (0, 0, 0)');
     
     // Create player controller for WASD + mouse controls
     this.playerController = new PlayerController(this.camera, startPosition);
@@ -270,10 +273,11 @@ export class GameEngine {
     console.log('[GameEngine] Loading test asset to verify rendering...');
     this.assetLoader.loadModel('/extracted_assets/KayKit_DungeonRemastered/Assets/gltf/barrel_small.gltf')
       .then((model) => {
-        model.position.set(0, 0, 0);
-        model.scale.setScalar(2); // Make it visible
+        model.position.set(0, 2, 0); // Position on ground
+        model.scale.setScalar(1); // Keep original scale  
         this.scene.add(model);
-        console.log('[GameEngine] ✓ Test asset loaded successfully at origin - assets are working!');
+        console.log('[GameEngine] ✓ Test asset (barrel) loaded at origin - assets working!');
+        console.log('[GameEngine] Barrel bounds:', model);
       })
       .catch((error) => {
         console.error('[GameEngine] ✗ Failed to load test asset:', error);

@@ -292,7 +292,8 @@ export class RealAssetTerrainGenerator {
             if (instancedMesh) {
               this.tempObject.position.set(worldX, height, worldZ);
               this.tempObject.rotation.y = (Math.floor(Math.random() * 4)) * (Math.PI / 2);
-              this.tempObject.scale.set(1, 1, 1);
+              // Models are 4x4 units (from -2 to +2), scale to fit tileSize of 2 units
+              this.tempObject.scale.set(0.5, 1, 0.5); // Scale down to fit tileSize
               this.tempObject.updateMatrix();
               
               const currentCount = this.instanceCounts.get(tileAsset) || 0;
@@ -309,6 +310,8 @@ export class RealAssetTerrainGenerator {
               const tile = cachedMesh.clone();
               tile.position.set(worldX, height, worldZ);
               tile.rotation.y = (Math.floor(Math.random() * 4)) * (Math.PI / 2);
+              // Models are 4x4 units (from -2 to +2), scale to fit tileSize of 2 units
+              tile.scale.set(0.5, 1, 0.5); // Scale down to fit tileSize
               chunkGroup.add(tile);
             }
           }
