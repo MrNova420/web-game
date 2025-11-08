@@ -2,12 +2,15 @@ import * as THREE from 'three';
 
 /**
  * AdvancedLightingSystem - Professional lighting setup for open world games
- * Implements multi-light setup with proper intensities and shadow configuration
+ * ENHANCEMENT: Full day/night cycle with dynamic color transitions
+ * Following AUTONOMOUS_DEVELOPMENT_GUIDE2.MD Section U
  */
 export class AdvancedLightingSystem {
   private scene: THREE.Scene;
   private lights: Map<string, THREE.Light> = new Map();
   private timeOfDay: number = 12; // 0-24 hours
+  private autoUpdate: boolean = false;
+  private timeSpeed: number = 0.01; // Hours per second
   
   // Light configuration
   private sunLight!: THREE.DirectionalLight;
@@ -177,6 +180,48 @@ export class AdvancedLightingSystem {
    */
   public getAllLights(): THREE.Light[] {
     return Array.from(this.lights.values()).concat(this.fillLights);
+  }
+  
+  /**
+   * ENHANCEMENT: Update system each frame for automatic day/night cycle
+   */
+  public update(deltaTime: number): void {
+    if (this.autoUpdate) {
+      this.timeOfDay += this.timeSpeed * deltaTime;
+      if (this.timeOfDay >= 24) this.timeOfDay -= 24;
+      this.updateTimeOfDay(this.timeOfDay);
+    }
+  }
+  
+  /**
+   * ENHANCEMENT: Enable automatic day/night cycle
+   */
+  public enableAutoCycle(speed: number = 0.01): void {
+    this.autoUpdate = true;
+    this.timeSpeed = speed;
+    console.log(`[AdvancedLightingSystem] Auto cycle enabled (${speed} hours/sec)`);
+  }
+  
+  /**
+   * ENHANCEMENT: Disable automatic day/night cycle
+   */
+  public disableAutoCycle(): void {
+    this.autoUpdate = false;
+    console.log('[AdvancedLightingSystem] Auto cycle disabled');
+  }
+  
+  /**
+   * ENHANCEMENT: Get current time of day
+   */
+  public getTimeOfDay(): number {
+    return this.timeOfDay;
+  }
+  
+  /**
+   * ENHANCEMENT: Set time speed (hours per second)
+   */
+  public setTimeSpeed(speed: number): void {
+    this.timeSpeed = speed;
   }
   
   /**
