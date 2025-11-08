@@ -36,59 +36,59 @@ export class RealAssetTerrainGenerator {
   private useGPUInstancing: boolean = true;
   private cpuMeshCache = new Map<string, THREE.Object3D>();
   
-  // ACTUAL ground tile models organized by biome
+  // ACTUAL ground tile models organized by biome - USING GLTF (better for web than OBJ)
   private terrainTiles = {
     forest: {
       // Use dirt and grass tiles for forest floor
       tiles: [
-        '/extracted_assets/KayKit_DungeonRemastered/Assets/obj/floor_dirt_large.obj',
-        '/extracted_assets/KayKit_DungeonRemastered/Assets/obj/floor_dirt_small_A.obj',
-        '/extracted_assets/KayKit_DungeonRemastered/Assets/obj/floor_dirt_small_B.obj',
-        '/extracted_assets/KayKit_DungeonRemastered/Assets/obj/floor_dirt_small_weeds.obj',
+        '/extracted_assets/KayKit_DungeonRemastered/Assets/gltf/floor_dirt_large.gltf',
+        '/extracted_assets/KayKit_DungeonRemastered/Assets/gltf/floor_dirt_small_A.gltf',
+        '/extracted_assets/KayKit_DungeonRemastered/Assets/gltf/floor_dirt_small_B.gltf',
+        '/extracted_assets/KayKit_DungeonRemastered/Assets/gltf/floor_dirt_small_weeds.gltf',
       ]
     },
     plains: {
       // Use grass-like tiles
       tiles: [
-        '/extracted_assets/KayKit_DungeonRemastered/Assets/obj/floor_dirt_small_weeds.obj',
-        '/extracted_assets/KayKit_DungeonRemastered/Assets/obj/floor_tile_small_weeds_B.obj',
+        '/extracted_assets/KayKit_DungeonRemastered/Assets/gltf/floor_dirt_small_weeds.gltf',
+        '/extracted_assets/KayKit_DungeonRemastered/Assets/gltf/floor_tile_small_weeds_B.gltf',
       ]
     },
     mountain: {
       // Use stone tiles
       tiles: [
-        '/extracted_assets/KayKit_DungeonRemastered/Assets/obj/floor_tile_small.obj',
-        '/extracted_assets/KayKit_DungeonRemastered/Assets/obj/floor_tile_large_rocks.obj',
-        '/extracted_assets/KayKit_DungeonRemastered/Assets/obj/floor_tile_small_broken_A.obj',
+        '/extracted_assets/KayKit_DungeonRemastered/Assets/gltf/floor_tile_small.gltf',
+        '/extracted_assets/KayKit_DungeonRemastered/Assets/gltf/floor_tile_large_rocks.gltf',
+        '/extracted_assets/KayKit_DungeonRemastered/Assets/gltf/floor_tile_small_broken_A.gltf',
       ]
     },
     desert: {
       // Use sandy/dirt tiles
       tiles: [
-        '/extracted_assets/KayKit_DungeonRemastered/Assets/obj/floor_dirt_large.obj',
-        '/extracted_assets/KayKit_DungeonRemastered/Assets/obj/floor_dirt_small_A.obj',
+        '/extracted_assets/KayKit_DungeonRemastered/Assets/gltf/floor_dirt_large.gltf',
+        '/extracted_assets/KayKit_DungeonRemastered/Assets/gltf/floor_dirt_small_A.gltf',
       ]
     },
     swamp: {
       // Use wood and dirt tiles
       tiles: [
-        '/extracted_assets/KayKit_DungeonRemastered/Assets/obj/floor_wood_large.obj',
-        '/extracted_assets/KayKit_DungeonRemastered/Assets/obj/floor_dirt_small_weeds.obj',
-        '/extracted_assets/KayKit_DungeonRemastered/Assets/obj/floor_wood_small.obj',
+        '/extracted_assets/KayKit_DungeonRemastered/Assets/gltf/floor_wood_large.gltf',
+        '/extracted_assets/KayKit_DungeonRemastered/Assets/gltf/floor_dirt_small_weeds.gltf',
+        '/extracted_assets/KayKit_DungeonRemastered/Assets/gltf/floor_wood_small.gltf',
       ]
     },
     tundra: {
       // Use stone tiles for frozen ground
       tiles: [
-        '/extracted_assets/KayKit_DungeonRemastered/Assets/obj/floor_tile_small.obj',
-        '/extracted_assets/KayKit_DungeonRemastered/Assets/obj/floor_tile_small_corner.obj',
+        '/extracted_assets/KayKit_DungeonRemastered/Assets/gltf/floor_tile_small.gltf',
+        '/extracted_assets/KayKit_DungeonRemastered/Assets/gltf/floor_tile_small_corner.gltf',
       ]
     },
     mystical: {
       // Use decorated tiles
       tiles: [
-        '/extracted_assets/KayKit_DungeonRemastered/Assets/obj/floor_tile_small_decorated.obj',
-        '/extracted_assets/KayKit_DungeonRemastered/Assets/obj/floor_tile_small.obj',
+        '/extracted_assets/KayKit_DungeonRemastered/Assets/gltf/floor_tile_small_decorated.gltf',
+        '/extracted_assets/KayKit_DungeonRemastered/Assets/gltf/floor_tile_small.gltf',
       ]
     }
   };
@@ -98,41 +98,24 @@ export class RealAssetTerrainGenerator {
     this.noise = createNoise2D(() => seed);
     this.biomeSystem = new BiomeSystem();
     
-    // Detect WebGL support for GPU instancing
-    this.useGPUInstancing = this.detectWebGLSupport();
+    // ALWAYS use GPU instancing by default - it's available in all modern browsers
+    // Only fall back if explicitly broken during runtime
+    this.useGPUInstancing = true;
     
-    if (this.useGPUInstancing) {
-      console.log('[TerrainGenerator] GPU instancing available - using InstancedMesh for performance');
-    } else {
-      console.log('[TerrainGenerator] GPU instancing not available - using CPU rendering fallback');
-    }
+    console.log('[TerrainGenerator] GPU instancing enabled - InstancedMesh for optimal performance');
+    console.log('[TerrainGenerator] Note: CPU fallback available if instancing fails at runtime');
   }
   
   /**
-   * Detect if WebGL and GPU instancing are supported
+   * REMOVED: Old conservative detection that was causing unnecessary CPU fallback
+   * Modern mobile browsers (iOS Safari 15+, Chrome Mobile, Firefox Mobile) ALL support:
+   * - WebGL 1.0+ (since 2013)
+   * - InstancedMesh (Three.js feature, not browser-dependent)
+   * - GPU instancing extensions
+   * 
+   * The old detection was TOO CAUTIOUS and caused mobile devices to use slow CPU rendering.
+   * Now we default to GPU instancing and only fall back if there's an actual runtime error.
    */
-  private detectWebGLSupport(): boolean {
-    try {
-      const canvas = document.createElement('canvas');
-      const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
-      
-      if (!gl) {
-        console.warn('[TerrainGenerator] WebGL not supported, using CPU fallback');
-        return false;
-      }
-      
-      // Check if InstancedMesh is supported
-      if (typeof THREE.InstancedMesh === 'undefined') {
-        console.warn('[TerrainGenerator] InstancedMesh not supported, using CPU fallback');
-        return false;
-      }
-      
-      return true;
-    } catch (e) {
-      console.warn('[TerrainGenerator] WebGL detection failed, using CPU fallback', e);
-      return false;
-    }
-  }
 
   /**
    * PERFORMANCE FIX: Pre-load all tile models and create instanced meshes (GPU) or cache (CPU)
@@ -177,17 +160,10 @@ export class RealAssetTerrainGenerator {
           });
         }
         
-        // If still no geometry, create a fallback plane with texture
+        // If still no geometry, log error and skip (NO FALLBACK GEOMETRY - we only use real assets!)
         if (!geometry) {
-          console.warn(`[TerrainGenerator] No mesh geometry found in ${tilePath}, creating fallback plane`);
-          geometry = new THREE.PlaneGeometry(2, 2);
-          geometry.rotateX(-Math.PI / 2);  // Make it horizontal
-          material = new THREE.MeshStandardMaterial({ 
-            color: 0x888888,
-            roughness: 0.7,
-            metalness: 0.1,
-            side: THREE.DoubleSide // RENDERING FIX: Prevent see-through issues
-          });
+          console.error(`[TerrainGenerator] ✗ FAILED: No mesh geometry found in ${tilePath} - SKIPPING (no fallback geometry)`);
+          continue; // Skip this tile path entirely
         }
         
         if (geometry && material) {
@@ -207,31 +183,37 @@ export class RealAssetTerrainGenerator {
           this.tileMaterials.set(tilePath, material);
           
           if (this.useGPUInstancing) {
-            // GPU MODE: Create instanced mesh with capacity for many instances
-            const maxInstances = 30000;
-            const instancedMesh = new THREE.InstancedMesh(geometry, material, maxInstances);
-            
-            // RENDERING FIX: Configure instanced mesh for proper visibility
-            instancedMesh.castShadow = true;
-            instancedMesh.receiveShadow = true;
-            instancedMesh.count = 0;  // Start at 0, will be incremented as tiles are placed
-            instancedMesh.visible = true;  // Explicitly set visible
-            instancedMesh.frustumCulled = true;  // Enable frustum culling for performance
-            instancedMesh.name = `terrain_instanced_${tilePath.split('/').pop()}`;
-            
-            // RENDERING FIX: Ensure the material is properly configured
-            if (material instanceof THREE.MeshStandardMaterial || material instanceof THREE.MeshPhysicalMaterial) {
-              material.side = THREE.DoubleSide;
-              material.needsUpdate = true;
+            try {
+              // GPU MODE: Create instanced mesh with capacity for many instances
+              const maxInstances = 30000;
+              const instancedMesh = new THREE.InstancedMesh(geometry, material, maxInstances);
+              
+              // RENDERING FIX: Configure instanced mesh for proper visibility
+              instancedMesh.castShadow = true;
+              instancedMesh.receiveShadow = true;
+              instancedMesh.count = 0;  // Start at 0, will be incremented as tiles are placed
+              instancedMesh.visible = true;  // Explicitly set visible
+              instancedMesh.frustumCulled = true;  // Enable frustum culling for performance
+              instancedMesh.name = `terrain_instanced_${tilePath.split('/').pop()}`;
+              
+              scene.add(instancedMesh);
+              this.instancedMeshes.set(tilePath, instancedMesh);
+              this.instanceCounts.set(tilePath, 0);
+              
+              console.log(`[TerrainGenerator] ✓ Created instanced mesh for ${tilePath.split('/').pop()} - added to scene`);
+            } catch (instancingError) {
+              // If GPU instancing fails, fall back to CPU mode for this tile
+              console.error(`[TerrainGenerator] ⚠️ GPU instancing failed for ${tilePath}, using CPU fallback:`, instancingError);
+              this.useGPUInstancing = false; // Disable for all future tiles
+              
+              // Create CPU cache for this and future tiles
+              const cachedMesh = new THREE.Mesh(geometry, material);
+              cachedMesh.castShadow = true;
+              cachedMesh.receiveShadow = true;
+              this.cpuMeshCache.set(tilePath, cachedMesh);
             }
-            
-            scene.add(instancedMesh);
-            this.instancedMeshes.set(tilePath, instancedMesh);
-            this.instanceCounts.set(tilePath, 0);
-            
-            console.log(`[TerrainGenerator] ✓ Created instanced mesh for ${tilePath.split('/').pop()} - added to scene`);
           } else {
-            // CPU MODE: Cache the model for cloning
+            // CPU MODE: Cache the model for cloning (same quality, just more draw calls)
             const cachedMesh = new THREE.Mesh(geometry, material);
             cachedMesh.castShadow = true;
             cachedMesh.receiveShadow = true;
@@ -299,7 +281,8 @@ export class RealAssetTerrainGenerator {
             if (instancedMesh) {
               this.tempObject.position.set(worldX, height, worldZ);
               this.tempObject.rotation.y = (Math.floor(Math.random() * 4)) * (Math.PI / 2);
-              this.tempObject.scale.set(1, 1, 1);
+              // Models are 4x4 units (from -2 to +2), scale to fit tileSize of 2 units
+              this.tempObject.scale.set(0.5, 1, 0.5); // Scale down to fit tileSize
               this.tempObject.updateMatrix();
               
               const currentCount = this.instanceCounts.get(tileAsset) || 0;
@@ -316,6 +299,8 @@ export class RealAssetTerrainGenerator {
               const tile = cachedMesh.clone();
               tile.position.set(worldX, height, worldZ);
               tile.rotation.y = (Math.floor(Math.random() * 4)) * (Math.PI / 2);
+              // Models are 4x4 units (from -2 to +2), scale to fit tileSize of 2 units
+              tile.scale.set(0.5, 1, 0.5); // Scale down to fit tileSize
               chunkGroup.add(tile);
             }
           }

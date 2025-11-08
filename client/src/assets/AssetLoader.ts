@@ -26,14 +26,27 @@ export class AssetLoader {
       model = gltf.scene;
       
       // RENDERING FIX: Ensure GLTF materials are properly configured
+      // These settings ensure CONSISTENT QUALITY in both GPU instancing and CPU fallback modes
       model.traverse((child) => {
         if (child instanceof THREE.Mesh) {
           // Ensure materials have proper rendering settings
           const materials = Array.isArray(child.material) ? child.material : [child.material];
           materials.forEach(mat => {
             if (mat) {
-              // Fix see-through issues with double-sided rendering
-              mat.side = THREE.DoubleSide;
+              // CRITICAL FIX: Make materials opaque and visible (works in GPU & CPU modes)
+              mat.transparent = false;
+              mat.opacity = 1.0;
+              mat.side = THREE.FrontSide; // Use FrontSide for proper culling
+              mat.depthWrite = true;
+              mat.depthTest = true;
+              
+              // Fix for MeshStandardMaterial - PBR rendering for high quality
+              if (mat instanceof THREE.MeshStandardMaterial) {
+                mat.flatShading = false; // Smooth shading (NOT blocky)
+                mat.metalness = 0; // Not metallic
+                mat.roughness = 0.8; // Slightly rough for realistic look
+              }
+              
               mat.needsUpdate = true;
             }
           });
@@ -46,6 +59,10 @@ export class AssetLoader {
           if (child.geometry && !child.geometry.attributes.normal) {
             child.geometry.computeVertexNormals();
           }
+          
+          // Make mesh visible
+          child.visible = true;
+          child.frustumCulled = true;
         }
       });
     } else if (extension === 'obj') {
